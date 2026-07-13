@@ -1,7 +1,6 @@
 ﻿// lib/features/auth/presentation/widgets/login_header.dart
 import 'package:flutter/material.dart';
 import 'package:payroll_soft_token_app/core/constants/app_constants.dart';
-import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 
 class LoginHeader extends StatelessWidget {
   const LoginHeader({super.key});
@@ -10,50 +9,43 @@ class LoginHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Shield Icon with #9E0000 color on white background
+        // Shield Icon - EXACTLY as design (white background with red shield)
         Container(
-          width: 80,
-          height: 80,
+          width: 70,
+          height: 70,
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.shade200,
-                blurRadius: 20,
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 15,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.shield, size: 32, color: Colors.white),
-          ),
+          child: const Icon(Icons.shield, size: 34, color: Color(0xFF9E0000)),
         ),
-        const SizedBox(height: 24),
-        // Welcome Back - exactly as design
-        Text(
-          AppConstants.welcomeBack,
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A1A),
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Subtitle - exactly as design
-        Text(
-          AppConstants.loginSubtitle,
+        const SizedBox(height: 14),
+        // Welcome Back - EXACTLY as design
+        const Text(
+          'Welcome Back',
           style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey.shade600,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Subtitle - EXACTLY as design
+        Text(
+          'Please login to continue',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.white.withOpacity(0.8),
             fontWeight: FontWeight.w400,
+            letterSpacing: 0.2,
           ),
         ),
       ],

@@ -35,66 +35,72 @@ class _LoginFormState extends State<LoginForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Username Field
+          // Username Field - EXACTLY as design
           TextFormField(
             controller: _usernameController,
             decoration: InputDecoration(
-              labelText: AppConstants.usernameLabel,
-              hintText: AppConstants.usernameHint,
+              labelText: 'Username',
+              hintText: 'Enter your username',
               prefixIcon: const Icon(
                 Icons.person_outline,
                 color: Color(0xFF9E9E9E),
+                size: 22,
               ),
               filled: true,
               fillColor: Colors.grey.shade50,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(
                   color: AppTheme.primaryColor,
                   width: 2,
                 ),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: Colors.red, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 18,
+                vertical: 16,
               ),
               labelStyle: TextStyle(
-                color: Colors.grey.shade700,
+                color: Colors.grey.shade600,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
-              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
             ),
             validator: Validators.validateUsername,
             textInputAction: TextInputAction.next,
             keyboardType: TextInputType.text,
             autocorrect: false,
-            style: const TextStyle(fontSize: 16, color: Color(0xFF1A1A1A)),
+            style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // Password Field
+          // Password Field - EXACTLY as design
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
             decoration: InputDecoration(
-              labelText: AppConstants.passwordLabel,
-              hintText: AppConstants.passwordHint,
+              labelText: 'Password',
+              hintText: 'Enter password',
               prefixIcon: const Icon(
                 Icons.lock_outline,
                 color: Color(0xFF9E9E9E),
+                size: 22,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -102,6 +108,7 @@ class _LoginFormState extends State<LoginForm> {
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                   color: Colors.grey.shade500,
+                  size: 22,
                 ),
                 onPressed: () {
                   setState(() {
@@ -112,43 +119,47 @@ class _LoginFormState extends State<LoginForm> {
               filled: true,
               fillColor: Colors.grey.shade50,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(
                   color: AppTheme.primaryColor,
                   width: 2,
                 ),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: Colors.red, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 18,
+                vertical: 16,
               ),
               labelStyle: TextStyle(
-                color: Colors.grey.shade700,
+                color: Colors.grey.shade600,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
-              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
             ),
             validator: Validators.validatePassword,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _handleLogin(),
-            style: const TextStyle(fontSize: 16, color: Color(0xFF1A1A1A)),
+            style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          // Remember Me Checkbox
+          // Remember Me Checkbox - EXACTLY as design
           RememberMeCheckbox(
             value: _rememberMe,
             onChanged: (bool? value) {
@@ -157,7 +168,7 @@ class _LoginFormState extends State<LoginForm> {
               });
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
           // Error Message (if any)
           Consumer<AuthProvider>(
@@ -198,7 +209,7 @@ class _LoginFormState extends State<LoginForm> {
             },
           ),
 
-          // Login Button with #9E0000
+          // Login Button - EXACTLY as design
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               return ElevatedButton(
@@ -206,14 +217,15 @@ class _LoginFormState extends State<LoginForm> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 52),
+                  minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   elevation: 0,
                   textStyle: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 child: authProvider.isLoading
@@ -225,7 +237,7 @@ class _LoginFormState extends State<LoginForm> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(AppConstants.loginButton),
+                    : const Text('Login'),
               );
             },
           ),

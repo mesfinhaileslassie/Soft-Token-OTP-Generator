@@ -1,6 +1,5 @@
 ﻿// lib/features/auth/presentation/widgets/remember_me_checkbox.dart
 import 'package:flutter/material.dart';
-import 'package:payroll_soft_token_app/core/constants/app_constants.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 
 class RememberMeCheckbox extends StatelessWidget {
@@ -18,30 +17,30 @@ class RememberMeCheckbox extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 20,
-          height: 20,
+          width: 18,
+          height: 18,
           child: Checkbox(
             value: value,
             onChanged: onChanged,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(3),
             ),
             side: BorderSide(
               color: value ? AppTheme.primaryColor : Colors.grey.shade400,
-              width: 2,
+              width: 1.5,
             ),
             activeColor: AppTheme.primaryColor,
             checkColor: Colors.white,
           ),
         ),
-        const SizedBox(width: 10),
-        Text(
-          AppConstants.rememberMe,
+        const SizedBox(width: 8),
+        const Text(
+          'Remember me',
           style: TextStyle(
-            color: Colors.grey.shade700,
+            color: Color(0xFF666666),
             fontSize: 14,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
