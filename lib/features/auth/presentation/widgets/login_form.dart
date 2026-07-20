@@ -1,11 +1,13 @@
 ﻿// lib/features/auth/presentation/widgets/login_form.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/constants/app_constants.dart';
+import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
+import 'package:payroll_soft_token_app/core/utils/validators.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/remember_me_checkbox.dart';
 import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dart';
-import 'package:payroll_soft_token_app/core/utils/validators.dart';
-import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
-import 'package:provider/provider.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -35,7 +37,7 @@ class _LoginFormState extends State<LoginForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Username Field - EXACTLY as design
+          // Username Field
           TextFormField(
             controller: _usernameController,
             decoration: InputDecoration(
@@ -90,7 +92,7 @@ class _LoginFormState extends State<LoginForm> {
           ),
           const SizedBox(height: 14),
 
-          // Password Field - EXACTLY as design
+          // Password Field
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
@@ -159,7 +161,7 @@ class _LoginFormState extends State<LoginForm> {
           ),
           const SizedBox(height: 10),
 
-          // Remember Me Checkbox - EXACTLY as design
+          // Remember Me Checkbox
           RememberMeCheckbox(
             value: _rememberMe,
             onChanged: (bool? value) {
@@ -170,7 +172,7 @@ class _LoginFormState extends State<LoginForm> {
           ),
           const SizedBox(height: 28),
 
-          // Error Message (if any)
+          // Error Message
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               if (authProvider.errorMessage != null) {
@@ -209,7 +211,7 @@ class _LoginFormState extends State<LoginForm> {
             },
           ),
 
-          // Login Button - EXACTLY as design
+          // Login Button
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               return ElevatedButton(
@@ -240,6 +242,35 @@ class _LoginFormState extends State<LoginForm> {
                     : const Text('Login'),
               );
             },
+          ),
+
+          const SizedBox(height: 12),
+
+          // Register Device Button - THIS TAKES YOU TO DEVICE REGISTRATION
+          OutlinedButton(
+            onPressed: () {
+              context.push(AppRouter.deviceRegistration);
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.primaryColor,
+              side: BorderSide(color: AppTheme.primaryColor),
+              minimumSize: const Size(double.infinity, 44),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.devices, size: 18),
+                const SizedBox(width: 8),
+                const Text('Register Device'),
+              ],
+            ),
           ),
         ],
       ),

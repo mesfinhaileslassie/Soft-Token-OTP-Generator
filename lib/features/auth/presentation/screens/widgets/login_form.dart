@@ -1,10 +1,13 @@
 // lib/features/auth/presentation/widgets/login_form.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/constants/app_constants.dart';
+import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
+import 'package:payroll_soft_token_app/core/utils/validators.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/remember_me_checkbox.dart';
 import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dart';
-import 'package:payroll_soft_token_app/core/utils/validators.dart';
-import 'package:provider/provider.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -34,32 +37,80 @@ class _LoginFormState extends State<LoginForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Username Field - EXACTLY as design
           TextFormField(
             controller: _usernameController,
-            decoration: const InputDecoration(
-              labelText: AppConstants.usernameLabel,
-              hintText: AppConstants.usernameHint,
-              prefixIcon: Icon(Icons.person_outline),
+            decoration: InputDecoration(
+              labelText: 'Username',
+              hintText: 'Enter your username',
+              prefixIcon: const Icon(
+                Icons.person_outline,
+                color: Color(0xFF9E9E9E),
+                size: 22,
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              labelStyle: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
             ),
             validator: Validators.validateUsername,
             textInputAction: TextInputAction.next,
             keyboardType: TextInputType.text,
             autocorrect: false,
+            style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
+          // Password Field - EXACTLY as design
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
             decoration: InputDecoration(
-              labelText: AppConstants.passwordLabel,
-              hintText: AppConstants.passwordHint,
-              prefixIcon: const Icon(Icons.lock_outline),
+              labelText: 'Password',
+              hintText: 'Enter password',
+              prefixIcon: const Icon(
+                Icons.lock_outline,
+                color: Color(0xFF9E9E9E),
+                size: 22,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
+                  color: Colors.grey.shade500,
+                  size: 22,
                 ),
                 onPressed: () {
                   setState(() {
@@ -67,13 +118,50 @@ class _LoginFormState extends State<LoginForm> {
                   });
                 },
               ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              labelStyle: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
             ),
             validator: Validators.validatePassword,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _handleLogin(),
+            style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
+          // Remember Me Checkbox - EXACTLY as design
           RememberMeCheckbox(
             value: _rememberMe,
             onChanged: (bool? value) {
@@ -82,8 +170,9 @@ class _LoginFormState extends State<LoginForm> {
               });
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
+          // Error Message (if any)
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               if (authProvider.errorMessage != null) {
@@ -122,26 +211,59 @@ class _LoginFormState extends State<LoginForm> {
             },
           ),
 
+          // Login Button - EXACTLY as design
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               return ElevatedButton(
                 onPressed: authProvider.isLoading ? null : _handleLogin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 child: authProvider.isLoading
                     ? const SizedBox(
                         height: 24,
                         width: 24,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                           color: Colors.white,
                         ),
                       )
-                    : const Text(AppConstants.loginButton),
+                    : const Text('Login'),
               );
             },
+          ),
+
+          const SizedBox(height: 12),
+
+          // Device Registration Test Button
+          TextButton(
+            onPressed: () {
+              context.push(AppRouter.deviceRegistration);
+            },
+            style: TextButton.styleFrom(
+              minimumSize: const Size(double.infinity, 40),
+            ),
+            child: Text(
+              'Register Device (Test)',
+              style: TextStyle(
+                color: AppTheme.primaryColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.underline,
+                decorationColor: AppTheme.primaryColor,
+              ),
+            ),
           ),
         ],
       ),

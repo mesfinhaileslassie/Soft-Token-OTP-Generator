@@ -1,21 +1,15 @@
-﻿// lib/features/auth/presentation/screens/login_screen.dart
+// lib/features/token/presentation/screens/token_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
-import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_footer.dart';
-import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_form.dart';
-import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_header.dart';
-import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dart';
+import 'package:payroll_soft_token_app/features/token/presentation/widgets/token_header.dart';
+import 'package:payroll_soft_token_app/features/token/presentation/widgets/token_display.dart';
+import 'package:payroll_soft_token_app/features/token/presentation/widgets/token_actions.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class TokenScreen extends StatelessWidget {
+  const TokenScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Set navigation context for AuthProvider
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.setNavigationContext(context);
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -24,7 +18,7 @@ class LoginScreen extends StatelessWidget {
             // Header with #9E0000 background
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(top: 32, bottom: 28),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor,
                 borderRadius: const BorderRadius.only(
@@ -39,20 +33,20 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const LoginHeader(),
+              child: const TokenHeader(),
             ),
-            // Form and Footer
+            // Main Content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: const [
-                    SizedBox(height: 32),
-                    LoginForm(),
+                    TokenDisplay(),
                     SizedBox(height: 24),
-                    LoginFooter(),
-                    SizedBox(height: 20),
+                    TokenActions(),
                   ],
                 ),
               ),

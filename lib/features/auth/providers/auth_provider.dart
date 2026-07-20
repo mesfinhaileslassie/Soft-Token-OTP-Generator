@@ -1,5 +1,6 @@
 ﻿// lib/features/auth/providers/auth_provider.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -7,6 +8,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
   String? _username;
   String? _errorMessage;
+  BuildContext? _navigationContext;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
@@ -15,6 +17,10 @@ class AuthProvider extends ChangeNotifier {
 
   AuthProvider() {
     _checkAuthStatus();
+  }
+
+  void setNavigationContext(BuildContext context) {
+    _navigationContext = context;
   }
 
   Future<void> _checkAuthStatus() async {
@@ -55,11 +61,19 @@ class AuthProvider extends ChangeNotifier {
 
         _isAuthenticated = true;
         _username = username;
+        notifyListeners();
+
+        // Navigate to home screen
+        if (_navigationContext != null) {
+          GoRouter.of(_navigationContext!).go('/home');
+        }
       } else {
         _errorMessage = 'Invalid credentials';
+        notifyListeners();
       }
     } catch (e) {
       _errorMessage = 'An error occurred during login';
+      notifyListeners();
     } finally {
       _isLoading = false;
       notifyListeners();

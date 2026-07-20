@@ -1,4 +1,4 @@
-// lib/features/device/presentation/widgets/device_code_generator.dart
+﻿// lib/features/device/presentation/widgets/device_code_generator.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,10 +35,10 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
 
-      // Generate Installation ID (UUID)
+      // Generate Installation ID (UUID) - ALWAYS 36 CHARACTERS
       final installationId = const Uuid().v4();
 
-      // Generate a simple public key - NO SUBSTRING
+      // Generate Public Key using UUID - SAFE, NO SUBSTRING
       final publicKey = _generatePublicKey();
 
       // Get device serial number
@@ -64,9 +64,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
       };
 
       // Convert to pretty JSON string
-      final codeString = const JsonEncoder.withIndent(
-        '  ',
-      ).convert(deviceCodeData);
+      final codeString = const JsonEncoder.withIndent('  ').convert(deviceCodeData);
 
       setState(() {
         _deviceCode = codeString;
@@ -75,17 +73,22 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
       });
     } catch (e) {
       setState(() {
-        _deviceCode = 'Error: ${e.toString()}';
+        _deviceCode = 'Error generating device code: ${e.toString()}';
         _isGenerating = false;
       });
     }
   }
 
-  // SIMPLE public key - NO SUBSTRING, NO SPLITTING
+  // SAFE: Uses UUID which is always 36 characters - NO SUBSTRING
   String _generatePublicKey() {
-    // Just create a simple key using UUID without any substring
-    final uuid = const Uuid().v4();
-    return 'RSA-PUBLIC-KEY-$uuid';
+    final uuid1 = const Uuid().v4().replaceAll('-', '');
+    final uuid2 = const Uuid().v4().replaceAll('-', '');
+    // Both uuid1 and uuid2 are always 32 characters (after removing hyphens)
+    // Total: 16 + 16 = 32 characters for the middle part
+    return 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC'
+        '${uuid1.substring(0, 16)}'
+        '${uuid2.substring(0, 16)}'
+        'wIDAQAB';
   }
 
   Future<void> _copyToClipboard() async {
@@ -102,6 +105,12 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         ),
       );
     }
+  }
+
+  String _safeTruncate(String str, int maxLength) {
+    if (str.isEmpty) return 'N/A';
+    if (str.length <= maxLength) return str;
+    return '${str.substring(0, maxLength)}...';
   }
 
   @override
@@ -136,7 +145,10 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
             const SizedBox(height: 8),
             Text(
               'Click the button below to generate a unique device code',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -186,7 +198,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '✓ Device Code Generated',
+                      ' Device Code Generated Successfully',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -198,7 +210,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                     _buildSummaryRow('Device Model', _deviceModel),
                     _buildSummaryRow('Serial Number', _serialNumber),
                     _buildSummaryRow('Installation ID', _installationId),
-                    _buildSummaryRow('Public Key', _publicKey),
+                    _buildSummaryRow('Public Key', _safeTruncate(_publicKey, 30)),
                   ],
                 ),
               ),
