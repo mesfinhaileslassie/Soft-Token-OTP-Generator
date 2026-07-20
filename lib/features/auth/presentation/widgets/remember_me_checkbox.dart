@@ -1,4 +1,4 @@
-﻿// lib/features/auth/presentation/widgets/remember_me_checkbox.dart
+// lib/features/auth/presentation/widgets/remember_me_checkbox.dart
 import 'package:flutter/material.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
+
 class ActivationTimer extends StatefulWidget {
   const ActivationTimer({super.key});
 

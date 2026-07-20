@@ -1,4 +1,4 @@
-﻿// lib/features/auth/presentation/widgets/login_footer.dart
+// lib/features/auth/presentation/widgets/login_footer.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
@@ -11,7 +11,7 @@ class LoginFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Secured by soft token - EXACTLY as design
+        // Secured by soft token
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -34,7 +34,7 @@ class LoginFooter extends StatelessWidget {
         ),
         const SizedBox(height: 20),
 
-        // Divider with "or" - EXACTLY as design
+        // Divider with "or"
         Row(
           children: [
             Expanded(
@@ -68,7 +68,7 @@ class LoginFooter extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Don't have an account? Sign Up - EXACTLY as design
+        // Don't have an account? Sign Up
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -82,6 +82,7 @@ class LoginFooter extends StatelessWidget {
             ),
             GestureDetector(
               onTap: () {
+                // Navigate to Register Screen
                 context.push(AppRouter.register);
               },
               child: Text(

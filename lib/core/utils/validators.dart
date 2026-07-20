@@ -1,8 +1,11 @@
 ﻿// lib/core/utils/validators.dart
 class Validators {
-  static String? validateRequired(String? value, {String fieldName = 'This field'}) {
+  static String? validateRequired(
+    String? value, {
+    String fieldName = 'This field',
+  }) {
     if (value == null || value.trim().isEmpty) {
-      return ' is required';
+      return '$fieldName is required';
     }
     return null;
   }
@@ -60,7 +63,7 @@ class Validators {
     }
     final phoneRegex = RegExp(r'^\+?[0-9]{10,15}$');
     if (!phoneRegex.hasMatch(value.trim())) {
-      return 'Please enter a valid phone number';
+      return 'Please enter a valid phone number (10-15 digits)';
     }
     return null;
   }

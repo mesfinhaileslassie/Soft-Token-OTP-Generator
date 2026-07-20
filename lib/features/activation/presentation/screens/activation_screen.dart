@@ -17,13 +17,10 @@ class ActivationScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with #9E0000 background - Pushed UP with less padding
+            // Header with #9E0000 background
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 8, // Reduced from 24 to 8
-                bottom: 16, // Reduced from 20 to 16
-              ),
+              padding: const EdgeInsets.only(top: 8, bottom: 16),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor,
                 borderRadius: const BorderRadius.only(

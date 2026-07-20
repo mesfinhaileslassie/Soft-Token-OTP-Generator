@@ -1,1 +1,1 @@
-export 'package:payroll_soft_token_app/features/auth/presentation/screens/widgets/token_actions.dart';
+export 'package:payroll_soft_token_app/features/auth/presentation/widgets/token_actions.dart';

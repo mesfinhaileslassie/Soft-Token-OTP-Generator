@@ -1,4 +1,4 @@
-﻿// lib/features/auth/presentation/widgets/login_header.dart
+// lib/features/auth/presentation/widgets/login_header.dart
 import 'package:flutter/material.dart';
 import 'package:payroll_soft_token_app/core/constants/app_constants.dart';
 
@@ -9,45 +9,31 @@ class LoginHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Shield Icon - EXACTLY as design (white background with red shield)
+        // App Logo/Icon Placeholder
         Container(
-          width: 70,
-          height: 70,
+          width: 80,
+          height: 80,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.primary,
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
-          child: const Icon(Icons.shield, size: 34, color: Color(0xFF9E0000)),
+          child: const Icon(Icons.shield, size: 40, color: Colors.white),
         ),
-        const SizedBox(height: 14),
-        // Welcome Back - EXACTLY as design
-        const Text(
-          'Welcome Back',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            letterSpacing: 0.3,
-          ),
-        ),
-        const SizedBox(height: 6),
-        // Subtitle - EXACTLY as design
+        const SizedBox(height: 24),
         Text(
-          'Please login to continue',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.8),
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.2,
-          ),
+          AppConstants.welcomeBack,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 8),
+        Text(
+          AppConstants.loginSubtitle,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600),
+        ),
+        const SizedBox(height: 32),
       ],
     );
   }

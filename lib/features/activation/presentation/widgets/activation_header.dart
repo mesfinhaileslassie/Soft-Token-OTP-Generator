@@ -19,7 +19,7 @@ class ActivationHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        // Shield Icon - Smaller
+        // Shield Icon
         Container(
           width: 48,
           height: 48,
@@ -37,7 +37,7 @@ class ActivationHeader extends StatelessWidget {
           child: const Icon(Icons.shield, size: 24, color: Color(0xFF9E0000)),
         ),
         const SizedBox(height: 8),
-        // Title - Smaller
+        // Title
         const Text(
           'Activate your Device',
           style: TextStyle(
@@ -48,7 +48,7 @@ class ActivationHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        // Subtitle - Smaller
+        // Subtitle
         Text(
           'Enter your activation code, generated in the payroll system',
           style: TextStyle(

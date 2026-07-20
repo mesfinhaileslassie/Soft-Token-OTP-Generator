@@ -1,4 +1,4 @@
-﻿// lib/features/auth/presentation/widgets/login_form.dart
+// lib/features/auth/presentation/widgets/login_form.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -246,7 +246,7 @@ class _LoginFormState extends State<LoginForm> {
 
           const SizedBox(height: 12),
 
-          // Register Device Button - THIS TAKES YOU TO DEVICE REGISTRATION
+          // Register Device Button
           OutlinedButton(
             onPressed: () {
               context.push(AppRouter.deviceRegistration);

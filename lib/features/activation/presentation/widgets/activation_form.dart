@@ -61,6 +61,7 @@ class _ActivationFormState extends State<ActivationForm> {
 
   void _onCodeChanged(String value, int index) {
     if (value.isNotEmpty && index < 5) {
+      // Move to next field when a digit is entered
       _focusNodes[index + 1].requestFocus();
     }
   }
@@ -86,7 +87,7 @@ class _ActivationFormState extends State<ActivationForm> {
         ),
         const SizedBox(height: 16),
 
-        // 6-Digit Code Boxes with Border and Shadow
+        // 6-Digit Code Boxes with pure white (#FFFFFF)
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -114,7 +115,7 @@ class _ActivationFormState extends State<ActivationForm> {
                 ),
               ),
               const SizedBox(height: 16),
-              // 6 Digit Boxes
+              // 6 Digit Boxes - Pure White (#FFFFFF)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (index) {
@@ -133,9 +134,9 @@ class _ActivationFormState extends State<ActivationForm> {
                       boxShadow: [
                         BoxShadow(
                           color: _controllers[index].text.isNotEmpty
-                              ? AppTheme.primaryColor.withOpacity(0.2)
+                              ? AppTheme.primaryColor.withOpacity(0.15)
                               : Colors.grey.shade100,
-                          blurRadius: 6,
+                          blurRadius: 4,
                           offset: const Offset(0, 2),
                           spreadRadius: 1,
                         ),
@@ -148,6 +149,8 @@ class _ActivationFormState extends State<ActivationForm> {
                         border: InputBorder.none,
                         counterText: '',
                         contentPadding: EdgeInsets.zero,
+                        fillColor: Colors.white,
+                        filled: true,
                       ),
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
@@ -159,14 +162,21 @@ class _ActivationFormState extends State<ActivationForm> {
                       ),
                       onChanged: (value) {
                         setState(() {
+                          // Only allow digits
+                          if (value.isNotEmpty &&
+                              !RegExp(r'^[0-9]$').hasMatch(value)) {
+                            _controllers[index].clear();
+                            return;
+                          }
                           _onCodeChanged(value, index);
                         });
                       },
                       onTap: () {
-                        if (_controllers[index].text.isNotEmpty) {
-                          _controllers[index].clear();
-                          setState(() {});
-                        }
+                        // Select all text when tapped
+                        _controllers[index].selection = TextSelection(
+                          baseOffset: 0,
+                          extentOffset: _controllers[index].text.length,
+                        );
                       },
                     ),
                   );
