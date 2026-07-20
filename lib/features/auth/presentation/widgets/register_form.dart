@@ -96,6 +96,11 @@ class _RegisterFormState extends State<RegisterForm> {
               decoration: InputDecoration(
                 labelText: 'Firstname',
                 hintText: 'Enter your first name',
+                prefixIcon: const Icon(
+                  Icons.person_outline,
+                  color: Color(0xFF9E9E9E),
+                  size: 22,
+                ),
                 labelStyle: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 14,
@@ -110,7 +115,10 @@ class _RegisterFormState extends State<RegisterForm> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 1.5,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -147,6 +155,11 @@ class _RegisterFormState extends State<RegisterForm> {
               decoration: InputDecoration(
                 labelText: 'Lastname',
                 hintText: 'Enter your last name',
+                prefixIcon: const Icon(
+                  Icons.person_outline,
+                  color: Color(0xFF9E9E9E),
+                  size: 22,
+                ),
                 labelStyle: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 14,
@@ -161,7 +174,10 @@ class _RegisterFormState extends State<RegisterForm> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 1.5,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -198,6 +214,11 @@ class _RegisterFormState extends State<RegisterForm> {
               decoration: InputDecoration(
                 labelText: 'Gender',
                 hintText: 'Select your gender',
+                prefixIcon: const Icon(
+                  Icons.person_outline,
+                  color: Color(0xFF9E9E9E),
+                  size: 22,
+                ),
                 labelStyle: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 14,
@@ -212,7 +233,10 @@ class _RegisterFormState extends State<RegisterForm> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 1.5,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -256,6 +280,11 @@ class _RegisterFormState extends State<RegisterForm> {
               decoration: InputDecoration(
                 labelText: 'Phone',
                 hintText: 'Enter your Phone number',
+                prefixIcon: const Icon(
+                  Icons.phone_outlined,
+                  color: Color(0xFF9E9E9E),
+                  size: 22,
+                ),
                 labelStyle: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 14,
@@ -270,7 +299,10 @@ class _RegisterFormState extends State<RegisterForm> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 1.5,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -317,36 +349,10 @@ class _RegisterFormState extends State<RegisterForm> {
               decoration: InputDecoration(
                 labelText: 'Password',
                 hintText: 'Enter your password',
-                labelStyle: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                filled: true,
-                fillColor: const Color(0xFFF7F7F7),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFFFA400),
-                    width: 2,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.red, width: 2),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
+                prefixIcon: const Icon(
+                  Icons.lock_outline,
+                  color: Color(0xFF9E9E9E),
+                  size: 22,
                 ),
                 suffixIcon: IconButton(
                   icon: Icon(
@@ -362,19 +368,6 @@ class _RegisterFormState extends State<RegisterForm> {
                     });
                   },
                 ),
-              ),
-              validator: Validators.validatePassword,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 12),
-
-            // Confirm Password
-            TextFormField(
-              controller: _confirmPasswordController,
-              obscureText: _obscureConfirmPassword,
-              decoration: InputDecoration(
-                labelText: 'Confirm Password',
-                hintText: 'Confirm your password',
                 labelStyle: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 14,
@@ -389,7 +382,10 @@ class _RegisterFormState extends State<RegisterForm> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 1.5,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -406,6 +402,24 @@ class _RegisterFormState extends State<RegisterForm> {
                   horizontal: 16,
                   vertical: 16,
                 ),
+              ),
+              validator: Validators.validatePassword,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+
+            // Confirm Password
+            TextFormField(
+              controller: _confirmPasswordController,
+              obscureText: _obscureConfirmPassword,
+              decoration: InputDecoration(
+                labelText: 'Confirm Password',
+                hintText: 'Confirm your password',
+                prefixIcon: const Icon(
+                  Icons.lock_outline,
+                  color: Color(0xFF9E9E9E),
+                  size: 22,
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscureConfirmPassword
@@ -419,6 +433,40 @@ class _RegisterFormState extends State<RegisterForm> {
                       _obscureConfirmPassword = !_obscureConfirmPassword;
                     });
                   },
+                ),
+                labelStyle: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                filled: true,
+                fillColor: const Color(0xFFF7F7F7),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 1.5,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 2,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
                 ),
               ),
               validator: (value) {

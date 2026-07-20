@@ -1,7 +1,5 @@
 // lib/features/auth/presentation/screens/register_screen.dart
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/register_form.dart';
 
