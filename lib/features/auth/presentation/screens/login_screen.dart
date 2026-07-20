@@ -18,47 +18,45 @@ class LoginScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with #9E0000 background
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 32, bottom: 28),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+      // Remove SafeArea so header goes behind status bar
+      body: Column(
+        children: [
+          // Header with #9E0000 background - Goes behind status bar
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(
+              top: 40, // Space for status bar (time, wifi, battery)
+              bottom: 16,
+            ),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
+              ],
+            ),
+            child: const LoginHeader(),
+          ),
+          // Form and Footer
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: const [
+                  SizedBox(height: 24),
+                  LoginForm(),
+                  SizedBox(height: 24),
+                  LoginFooter(),
+                  SizedBox(height: 20),
                 ],
               ),
-              child: const LoginHeader(),
             ),
-            // Form and Footer
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: const [
-                    SizedBox(height: 32),
-                    LoginForm(),
-                    SizedBox(height: 24),
-                    LoginFooter(),
-                    SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
