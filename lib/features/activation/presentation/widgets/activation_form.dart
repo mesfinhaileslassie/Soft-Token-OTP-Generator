@@ -86,18 +86,19 @@ class _ActivationFormState extends State<ActivationForm> {
         ),
         const SizedBox(height: 16),
 
-        // 6-Digit Code Boxes
+        // 6-Digit Code Boxes with Border and Shadow
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: Colors.grey.shade200, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.shade100,
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                color: Colors.grey.shade200,
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+                spreadRadius: 2,
               ),
             ],
           ),
@@ -112,66 +113,66 @@ class _ActivationFormState extends State<ActivationForm> {
                   color: Color(0xFF1A1A1A),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               // 6 Digit Boxes
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (index) {
-                  return SizedBox(
-                    width: 40,
-                    height: 50,
+                  return Container(
+                    width: 44,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _controllers[index].text.isNotEmpty
+                            ? AppTheme.primaryColor
+                            : Colors.grey.shade300,
+                        width: _controllers[index].text.isNotEmpty ? 2 : 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _controllers[index].text.isNotEmpty
+                              ? AppTheme.primaryColor.withOpacity(0.2)
+                              : Colors.grey.shade100,
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
                     child: TextFormField(
                       controller: _controllers[index],
                       focusNode: _focusNodes[index],
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.grey.shade300,
-                            width: 1.5,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.grey.shade300,
-                            width: 1.5,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: AppTheme.primaryColor,
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: EdgeInsets.zero,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
                         counterText: '',
+                        contentPadding: EdgeInsets.zero,
                       ),
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
                       maxLength: 1,
                       style: const TextStyle(
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF1A1A1A),
                       ),
                       onChanged: (value) {
-                        _onCodeChanged(value, index);
+                        setState(() {
+                          _onCodeChanged(value, index);
+                        });
                       },
                       onTap: () {
-                        // Clear the field when tapped to allow re-entry
                         if (_controllers[index].text.isNotEmpty) {
                           _controllers[index].clear();
+                          setState(() {});
                         }
                       },
                     ),
                   );
                 }),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               // Hidden hint text shown as "000000" below the boxes
               Center(
                 child: Text(
@@ -179,14 +180,15 @@ class _ActivationFormState extends State<ActivationForm> {
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey.shade400,
-                    letterSpacing: 16,
+                    letterSpacing: 18,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
         // Activate Device Button
         ElevatedButton(

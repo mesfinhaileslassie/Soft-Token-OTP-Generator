@@ -18,11 +18,11 @@ class ActivationHeader extends StatelessWidget {
             letterSpacing: 1,
           ),
         ),
-        const SizedBox(height: 8),
-        // Shield Icon
+        const SizedBox(height: 6),
+        // Shield Icon - Smaller
         Container(
-          width: 56,
-          height: 56,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
@@ -34,25 +34,25 @@ class ActivationHeader extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(Icons.shield, size: 28, color: Color(0xFF9E0000)),
+          child: const Icon(Icons.shield, size: 24, color: Color(0xFF9E0000)),
         ),
-        const SizedBox(height: 10),
-        // Title
+        const SizedBox(height: 8),
+        // Title - Smaller
         const Text(
           'Activate your Device',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
             letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 4),
-        // Subtitle
+        // Subtitle - Smaller
         Text(
           'Enter your activation code, generated in the payroll system',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             color: Colors.white.withOpacity(0.85),
             fontWeight: FontWeight.w400,
           ),

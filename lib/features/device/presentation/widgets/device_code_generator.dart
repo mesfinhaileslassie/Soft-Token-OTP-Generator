@@ -18,12 +18,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
   bool _isGenerating = false;
   bool _isCopied = false;
 
-  String _androidId = '';
-  String _deviceModel = '';
-  String _serialNumber = '';
-  String _installationId = '';
-  String _publicKey = '';
-
   static const Color codeColor = Color(0xFFFFA400);
 
   Future<void> _generateDeviceCode() async {
@@ -38,12 +32,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
       final installationId = const Uuid().v4();
       final publicKey = _generatePublicKey();
       final serialNumber = androidInfo.serialNumber ?? 'Unknown';
-
-      _androidId = androidInfo.id;
-      _deviceModel = androidInfo.model;
-      _serialNumber = serialNumber;
-      _installationId = installationId;
-      _publicKey = publicKey;
 
       final deviceCodeData = {
         'android_id': androidInfo.id,
@@ -94,12 +82,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         ),
       );
     }
-  }
-
-  String _safeTruncate(String str, int maxLength) {
-    if (str.isEmpty) return 'N/A';
-    if (str.length <= maxLength) return str;
-    return '${str.substring(0, maxLength)}...';
   }
 
   @override
@@ -240,25 +222,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: codeColor.withOpacity(0.3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSummaryRow('Android ID', _androidId),
-                      _buildSummaryRow('Device Model', _deviceModel),
-                      _buildSummaryRow('Serial Number', _serialNumber),
-                      _buildSummaryRow('Installation ID', _installationId),
-                      _buildSummaryRow('Public Key', _safeTruncate(_publicKey, 30)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
+                // Device Code JSON - Removed summary rows, only JSON
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -319,38 +283,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
           ),
         ],
       ],
-    );
-  }
-
-  Widget _buildSummaryRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1A1A1A),
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
