@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/screens/register_screen.dart';
-import 'package:payroll_soft_token_app/features/home/presentation/screens/home_screen.dart';
-import 'package:payroll_soft_token_app/features/device/presentation/screens/device_registration_screen.dart';
 import 'package:payroll_soft_token_app/features/token/presentation/screens/token_screen.dart';
+import 'package:payroll_soft_token_app/features/device/presentation/screens/device_registration_screen.dart';
 import 'package:payroll_soft_token_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_screen.dart';
 
@@ -37,17 +36,17 @@ class AppRouter {
       GoRoute(
         path: home,
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: deviceRegistration,
-        name: 'device-registration',
-        builder: (context, state) => const DeviceRegistrationScreen(),
+        builder: (context, state) => const TokenScreen(),
       ),
       GoRoute(
         path: token,
         name: 'token',
         builder: (context, state) => const TokenScreen(),
+      ),
+      GoRoute(
+        path: deviceRegistration,
+        name: 'device-registration',
+        builder: (context, state) => const DeviceRegistrationScreen(),
       ),
       GoRoute(
         path: profile,

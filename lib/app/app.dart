@@ -4,6 +4,7 @@ import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dart';
+import 'package:payroll_soft_token_app/features/token/providers/token_provider.dart';
 
 class SoftTokenApp extends StatelessWidget {
   const SoftTokenApp({super.key});
@@ -13,6 +14,7 @@ class SoftTokenApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => TokenProvider()),
       ],
       child: MaterialApp.router(
         title: 'Soft Token',
