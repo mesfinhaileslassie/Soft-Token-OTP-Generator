@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -25,12 +26,24 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _checkAuthStatus() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      if (token != null && token.isNotEmpty) {
-        _isAuthenticated = true;
-        _username = prefs.getString('username');
-        notifyListeners();
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+      if (session != null && session['username'] != null) {
+        // Verify the user still exists
+        final user = await storage.getUser(session['username']);
+        if (user != null) {
+          _isAuthenticated = true;
+          _username = session['username'];
+          notifyListeners();
+
+          // Navigate to home if already logged in
+          if (_navigationContext != null) {
+            GoRouter.of(_navigationContext!).go('/home');
+          }
+        } else {
+          // User no longer exists, clear session
+          await storage.clearSession();
+        }
       }
     } catch (e) {
       // Handle error silently
@@ -47,34 +60,55 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (username.isNotEmpty && password.isNotEmpty) {
-        if (rememberMe) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(
-            'auth_token',
-            'dummy_token_${DateTime.now().millisecondsSinceEpoch}',
-          );
-          await prefs.setString('username', username);
-        }
-
-        _isAuthenticated = true;
-        _username = username;
+      // Validate inputs
+      if (username.isEmpty || password.isEmpty) {
+        _errorMessage = 'Please enter username and password';
+        _isLoading = false;
         notifyListeners();
+        return;
+      }
 
-        // Navigate to home screen
-        if (_navigationContext != null) {
-          GoRouter.of(_navigationContext!).go('/home');
-        }
-      } else {
-        _errorMessage = 'Invalid credentials';
+      final storage = await StorageService.getInstance();
+
+      // Get user from storage
+      final user = await storage.getUser(username);
+
+      // Check if user exists
+      if (user == null) {
+        _errorMessage = 'User not found. Please register first.';
+        _isLoading = false;
         notifyListeners();
+        return;
+      }
+
+      // Check password
+      if (user['password'] != password) {
+        _errorMessage = 'Invalid password. Please try again.';
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      // Save session
+      final token = 'session_${DateTime.now().millisecondsSinceEpoch}';
+      await storage.saveSession(username, token);
+
+      if (rememberMe) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('remember_username', username);
+      }
+
+      _isAuthenticated = true;
+      _username = username;
+      _isLoading = false;
+      notifyListeners();
+
+      // Navigate to home
+      if (_navigationContext != null) {
+        GoRouter.of(_navigationContext!).go('/home');
       }
     } catch (e) {
-      _errorMessage = 'An error occurred during login';
-      notifyListeners();
-    } finally {
+      _errorMessage = 'An error occurred during login: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
     }
@@ -82,14 +116,27 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     try {
+      final storage = await StorageService.getInstance();
+      await storage.clearSession();
+
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('auth_token');
-      await prefs.remove('username');
+      await prefs.remove('remember_username');
+
       _isAuthenticated = false;
       _username = null;
       notifyListeners();
+
+      // Navigate to login
+      if (_navigationContext != null) {
+        GoRouter.of(_navigationContext!).go('/login');
+      }
     } catch (e) {
       // Handle error silently
     }
+  }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
   }
 }

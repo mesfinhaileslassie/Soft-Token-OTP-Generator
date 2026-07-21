@@ -82,7 +82,6 @@ class LoginFooter extends StatelessWidget {
             ),
             GestureDetector(
               onTap: () {
-                // Navigate to Register Screen
                 context.push(AppRouter.register);
               },
               child: Text(

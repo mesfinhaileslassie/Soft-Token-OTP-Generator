@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
-import 'package:payroll_soft_token_app/core/constants/app_constants.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/utils/validators.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/remember_me_checkbox.dart';
@@ -282,6 +281,9 @@ class _LoginFormState extends State<LoginForm> {
       FocusScope.of(context).unfocus();
 
       final authProvider = context.read<AuthProvider>();
+      // Clear previous error
+      authProvider.clearError();
+
       authProvider.login(
         username: _usernameController.text.trim(),
         password: _passwordController.text,

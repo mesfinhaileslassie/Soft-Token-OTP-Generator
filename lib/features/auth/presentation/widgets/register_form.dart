@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/utils/validators.dart';
+import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -14,6 +15,7 @@ class RegisterForm extends StatefulWidget {
 
 class _RegisterFormState extends State<RegisterForm> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -29,6 +31,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
@@ -37,25 +40,79 @@ class _RegisterFormState extends State<RegisterForm> {
     super.dispose();
   }
 
-  void _handleRegister() {
+  Future<void> _handleRegister() async {
     if (_formKey.currentState?.validate() ?? false) {
       FocusScope.of(context).unfocus();
       setState(() {
         _isLoading = true;
       });
 
-      Future.delayed(const Duration(seconds: 2), () {
+      try {
+        final storage = await StorageService.getInstance();
+        final username = _usernameController.text.trim();
+
+        // Check if username already exists
+        final existingUser = await storage.getUser(username);
+        if (existingUser != null) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Username already exists. Please choose another.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return;
+        }
+
+        // Create user object
+        final userData = {
+          'username': username,
+          'firstName': _firstNameController.text.trim(),
+          'lastName': _lastNameController.text.trim(),
+          'gender': _selectedGender ?? '',
+          'phone': _phoneController.text.trim(),
+          'password': _passwordController.text,
+          'createdAt': DateTime.now().toIso8601String(),
+          'devices': [],
+          'isLoggedIn': false,
+        };
+
+        // Save user to local storage
+        await storage.saveUser(userData);
+
         setState(() {
           _isLoading = false;
         });
+
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Registration successful! Please login.'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
-        context.go(AppRouter.login);
-      });
+
+        // Navigate to login page
+        if (mounted) {
+          // Use go() instead of push() to replace the current route
+          context.go(AppRouter.login);
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Registration failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -89,6 +146,68 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // Username
+            TextFormField(
+              controller: _usernameController,
+              decoration: InputDecoration(
+                labelText: 'Username',
+                hintText: 'Choose a username',
+                prefixIcon: const Icon(
+                  Icons.person_outline,
+                  color: Color(0xFF9E9E9E),
+                  size: 22,
+                ),
+                labelStyle: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                filled: true,
+                fillColor: const Color(0xFFF7F7F7),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 1.5,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFFA400),
+                    width: 2,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Username is required';
+                }
+                if (value.trim().length < 3) {
+                  return 'Username must be at least 3 characters';
+                }
+                if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
+                  return 'Username can only contain letters, numbers, and underscores';
+                }
+                return null;
+              },
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
 
             // First Name
             TextFormField(

@@ -226,7 +226,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color.fromARGB(255, 255, 237, 123),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: codeColor.withOpacity(0.2)),
                   ),
