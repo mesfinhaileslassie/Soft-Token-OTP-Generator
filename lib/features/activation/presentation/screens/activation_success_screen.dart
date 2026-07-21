@@ -1,5 +1,6 @@
 // lib/features/activation/presentation/screens/activation_success_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
@@ -9,15 +10,19 @@ class ActivationSuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Column(
           children: [
-            // Header with #9E0000 background - Behind status bar
+            // Header with #9E0000 background - extends behind the status bar
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(top: 40, bottom: 16),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 16,
+                bottom: 16,
+              ),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor,
                 boxShadow: [
@@ -86,60 +91,64 @@ class ActivationSuccessScreen extends StatelessWidget {
                 ],
               ),
             ),
-            // Main Content
+            // Main Content - SafeArea(top: false) since the header above
+            // already accounts for the status bar / notch itself.
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 32,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Shield + Sparkles Illustration
-                    const _ShieldWithSparkles(),
-                    const SizedBox(height: 24),
-                    // Congratulations Text
-                    const Text(
-                      'Congratulations!',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Your Device is now activated successfully',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 40),
-                    // Continue to Login Button
-                    ElevatedButton(
-                      onPressed: () {
-                        context.go(AppRouter.home);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 32,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Shield + Sparkles Illustration
+                      const _ShieldWithSparkles(),
+                      const SizedBox(height: 24),
+                      // Congratulations Text
+                      const Text(
+                        'Congratulations!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
                         ),
-                        elevation: 0,
-                        textStyle: const TextStyle(
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Your Device is now activated successfully',
+                        style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
+                          color: Colors.grey.shade600,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                      child: const Text('Continue to Login'),
-                    ),
-                  ],
+                      const SizedBox(height: 40),
+                      // Continue to Login Button
+                      ElevatedButton(
+                        onPressed: () {
+                          context.go(AppRouter.home);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        child: const Text('Continue to Login'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
