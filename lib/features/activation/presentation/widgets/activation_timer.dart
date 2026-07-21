@@ -1,16 +1,21 @@
 // lib/features/activation/presentation/widgets/activation_timer.dart
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 
 class ActivationTimer extends StatefulWidget {
-  const ActivationTimer({super.key});
+  final VoidCallback? onResend;
+
+  const ActivationTimer({super.key, this.onResend});
 
   @override
   State<ActivationTimer> createState() => _ActivationTimerState();
 }
 
 class _ActivationTimerState extends State<ActivationTimer> {
+  static const Color _pillColor = Color(0xFFFDECC8);
+  static const Color _timeColor = Color(0xFFE0447B);
+
   int _secondsRemaining = 118; // 01:58
   Timer? _timer;
   bool _isExpired = false;
@@ -46,53 +51,51 @@ class _ActivationTimerState extends State<ActivationTimer> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  void _reset() {
+    setState(() {
+      _secondsRemaining = 118;
+      _isExpired = false;
+      _timer?.cancel();
+      _startTimer();
+    });
+    widget.onResend?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
-        color: _isExpired ? Colors.red.shade50 : Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: _isExpired ? Colors.red.shade200 : Colors.orange.shade200,
-        ),
+        color: _pillColor,
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.timer_outlined,
-            color: _isExpired ? Colors.red : Colors.orange.shade700,
-            size: 20,
-          ),
-          const SizedBox(width: 10),
+          Icon(Icons.access_time, color: Colors.orange.shade800, size: 18),
+          const SizedBox(width: 8),
           Text(
-            'Code expires in ',
-            style: TextStyle(
-              color: _isExpired ? Colors.red.shade700 : Colors.orange.shade700,
+            _isExpired ? 'Code has expired' : 'Code expires in ',
+            style: const TextStyle(
+              color: Color(0xFF4A4A4A),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),
-          Text(
-            _isExpired ? 'Expired!' : _formatTime(_secondsRemaining),
-            style: TextStyle(
-              color: _isExpired ? Colors.red.shade700 : Colors.orange.shade700,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+          if (!_isExpired)
+            Text(
+              _formatTime(_secondsRemaining),
+              style: const TextStyle(
+                color: _timeColor,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
           if (_isExpired) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             GestureDetector(
-              onTap: () {
-                setState(() {
-                  _secondsRemaining = 118;
-                  _isExpired = false;
-                  _timer?.cancel();
-                  _startTimer();
-                });
-              },
+              onTap: _reset,
               child: Text(
                 'Resend',
                 style: TextStyle(

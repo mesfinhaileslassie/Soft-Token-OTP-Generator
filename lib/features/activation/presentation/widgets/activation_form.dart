@@ -1,6 +1,8 @@
 // lib/features/activation/presentation/widgets/activation_form.dart
 import 'package:flutter/material.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
+import 'package:payroll_soft_token_app/features/activation/presentation/widgets/activation_footer.dart';
+import 'package:payroll_soft_token_app/features/activation/presentation/widgets/activation_timer.dart';
 
 class ActivationForm extends StatefulWidget {
   const ActivationForm({super.key});
@@ -46,6 +48,7 @@ class _ActivationFormState extends State<ActivationForm> {
 
     // Simulate activation process
     Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -61,9 +64,17 @@ class _ActivationFormState extends State<ActivationForm> {
 
   void _onCodeChanged(String value, int index) {
     if (value.isNotEmpty && index < 5) {
-      // Move to next field when a digit is entered
       _focusNodes[index + 1].requestFocus();
     }
+  }
+
+  void _resetCode() {
+    setState(() {
+      for (var controller in _controllers) {
+        controller.clear();
+      }
+    });
+    _focusNodes.first.requestFocus();
   }
 
   @override
@@ -71,133 +82,123 @@ class _ActivationFormState extends State<ActivationForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Device Verification
+        // Device Verification — icon + title/subtitle row
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.orange.shade300, width: 1.5),
+              ),
+              child: Icon(
+                Icons.lock_outline,
+                color: Colors.orange.shade700,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Device Verification',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'This code securely links your device to your account',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Enter Activation Code
         const Text(
-          'Device Verification',
+          'Enter Activation Code',
           style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
             color: Color(0xFF1A1A1A),
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          'This code securely links your device to your account',
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
-        // 6-Digit Code Boxes with pure white (#FFFFFF)
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200, width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.shade200,
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-                spreadRadius: 2,
+        // 6 Digit Boxes — plain, no outer card
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(6, (index) {
+            return Container(
+              width: 44,
+              height: 54,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: _controllers[index].text.isNotEmpty
+                      ? AppTheme.primaryColor
+                      : Colors.grey.shade300,
+                  width: _controllers[index].text.isNotEmpty ? 2 : 1.5,
+                ),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Enter Activation Code',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+              child: TextFormField(
+                controller: _controllers[index],
+                focusNode: _focusNodes[index],
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  counterText: '',
+                  contentPadding: EdgeInsets.zero,
+                  fillColor: Colors.white,
+                  filled: true,
+                ),
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                maxLength: 1,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
                   color: Color(0xFF1A1A1A),
                 ),
-              ),
-              const SizedBox(height: 16),
-              // 6 Digit Boxes - Pure White (#FFFFFF)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(6, (index) {
-                  return Container(
-                    width: 44,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: _controllers[index].text.isNotEmpty
-                            ? AppTheme.primaryColor
-                            : Colors.grey.shade300,
-                        width: _controllers[index].text.isNotEmpty ? 2 : 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _controllers[index].text.isNotEmpty
-                              ? AppTheme.primaryColor.withOpacity(0.15)
-                              : Colors.grey.shade100,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: TextFormField(
-                      controller: _controllers[index],
-                      focusNode: _focusNodes[index],
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        counterText: '',
-                        contentPadding: EdgeInsets.zero,
-                        fillColor: Colors.white,
-                        filled: true,
-                      ),
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      maxLength: 1,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          // Only allow digits
-                          if (value.isNotEmpty &&
-                              !RegExp(r'^[0-9]$').hasMatch(value)) {
-                            _controllers[index].clear();
-                            return;
-                          }
-                          _onCodeChanged(value, index);
-                        });
-                      },
-                      onTap: () {
-                        // Select all text when tapped
-                        _controllers[index].selection = TextSelection(
-                          baseOffset: 0,
-                          extentOffset: _controllers[index].text.length,
-                        );
-                      },
-                    ),
+                onChanged: (value) {
+                  setState(() {
+                    if (value.isNotEmpty &&
+                        !RegExp(r'^[0-9]$').hasMatch(value)) {
+                      _controllers[index].clear();
+                      return;
+                    }
+                    _onCodeChanged(value, index);
+                  });
+                },
+                onTap: () {
+                  _controllers[index].selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: _controllers[index].text.length,
                   );
-                }),
+                },
               ),
-              const SizedBox(height: 16),
-              // Hidden hint text shown as "000000" below the boxes
-              Center(
-                child: Text(
-                  '000000',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade400,
-                    letterSpacing: 18,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          }),
         ),
+        const SizedBox(height: 20),
+
+        // Code-expiry countdown pill
+        ActivationTimer(onResend: _resetCode),
+        const SizedBox(height: 16),
+
+        // "Didn't receive the code? Resend Code"
+        ResendCodeRow(onResend: _resetCode),
         const SizedBox(height: 24),
 
         // Activate Device Button

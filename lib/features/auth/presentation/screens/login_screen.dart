@@ -1,15 +1,12 @@
 ﻿// lib/features/auth/presentation/screens/login_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_footer.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_form.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_header.dart';
+import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dart';
 
-/// Full login page.
-///
-/// Layout: a fixed red banner sits behind the top of the screen, the rest
-/// of the screen is white, and the shield badge is positioned so it
-/// straddles the red/white boundary — matching the design mock.
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -17,6 +14,10 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ FIX: Set navigation context for AuthProvider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.setNavigationContext(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
