@@ -1,64 +1,96 @@
 // lib/features/auth/presentation/widgets/login_header.dart
 import 'package:flutter/material.dart';
-import 'package:payroll_soft_token_app/core/constants/app_constants.dart';
+import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 
 class LoginHeader extends StatelessWidget {
   const LoginHeader({super.key});
+
+  static const Color _subtitleColor = Color(0xFFF5A623);
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Soft Token text
-        const Text(
-          'Soft Token',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.white70,
-            letterSpacing: 1,
-          ),
-        ),
-        const SizedBox(height: 6),
-        // Shield Icon
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.shield, size: 24, color: Color(0xFF9E0000)),
-        ),
-        const SizedBox(height: 8),
+        // Shield badge (white fill, primary-colored outline, "Soft Token"
+        // wordmark inside). Sits centered on the red/white boundary.
+        const _ShieldBadge(),
+        const SizedBox(height: 14),
+
         // Title
         const Text(
           'Welcome Back',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 0.5,
+            color: Color(0xFF1A1A1A),
+            letterSpacing: 0.2,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
+
         // Subtitle
-        Text(
+        const Text(
           'Please login to continue',
           style: TextStyle(
-            fontSize: 12,
-            color: Colors.white.withOpacity(0.85),
-            fontWeight: FontWeight.w400,
+            fontSize: 13,
+            color: _subtitleColor,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ShieldBadge extends StatelessWidget {
+  const _ShieldBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 92,
+      height: 92,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Center(
+        child: SizedBox(
+          width: 62,
+          height: 62,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Icon(Icons.shield, size: 62, color: Colors.white),
+              Icon(
+                Icons.shield_outlined,
+                size: 62,
+                color: AppTheme.primaryColor,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Soft\nToken',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.bold,
+                    height: 1.15,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
