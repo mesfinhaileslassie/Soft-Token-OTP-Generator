@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
+import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 
 class DeviceCodeGenerator extends StatefulWidget {
   const DeviceCodeGenerator({super.key});
@@ -26,13 +27,17 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
     });
 
     try {
+      // Step 2: Collect device info
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
 
+      // Step 3: Generate Installation ID, Public Key, Private Key
       final installationId = const Uuid().v4();
       final publicKey = _generatePublicKey();
+      final privateKey = _generatePrivateKey();
       final serialNumber = androidInfo.serialNumber ?? 'Unknown';
 
+      // Step 4: Generate Device Code containing Android ID, Device Model, Serial Number, Installation ID, Public Key
       final deviceCodeData = {
         'android_id': androidInfo.id,
         'device_model': androidInfo.model,
@@ -44,18 +49,39 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         'timestamp': DateTime.now().toIso8601String(),
       };
 
-      final codeString = const JsonEncoder.withIndent('  ').convert(deviceCodeData);
+      final codeString = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(deviceCodeData);
 
       setState(() {
         _deviceCode = codeString;
         _isGenerating = false;
         _isCopied = false;
       });
+
+      // Step 5: Save device code and keys to local storage
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+      if (session != null && session['username'] != null) {
+        await storage.saveDeviceCode(session['username'], codeString);
+        await storage.saveTemporaryKeys(
+          session['username'],
+          installationId,
+          publicKey,
+          privateKey,
+        );
+      }
+
+      _showSnackBar(
+        'Device code generated! Copy and paste in Payroll System.',
+        Colors.green,
+      );
     } catch (e) {
       setState(() {
         _deviceCode = 'Error: ${e.toString()}';
         _isGenerating = false;
       });
+      _showSnackBar('Error generating device code', Colors.red);
     }
   }
 
@@ -68,18 +94,30 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         'wIDAQAB';
   }
 
+  String _generatePrivateKey() {
+    final uuid = const Uuid().v4().replaceAll('-', '');
+    return 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC$uuid';
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   Future<void> _copyToClipboard() async {
     if (_deviceCode.isNotEmpty) {
       await Clipboard.setData(ClipboardData(text: _deviceCode));
       setState(() {
         _isCopied = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Device code copied to clipboard'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
+      _showSnackBar(
+        'Device code copied! Paste it in Payroll System.',
+        Colors.green,
       );
     }
   }
@@ -89,6 +127,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ========== GENERATE DEVICE CODE SECTION ==========
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -117,12 +156,11 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
               const SizedBox(height: 8),
               Text(
                 'Click the button below to generate a unique device code',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 20),
+
+              // GENERATE DEVICE CODE BUTTON
               ElevatedButton(
                 onPressed: _isGenerating ? null : _generateDeviceCode,
                 style: ElevatedButton.styleFrom(
@@ -152,6 +190,8 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
           ),
         ),
         const SizedBox(height: 20),
+
+        // ========== DEVICE CODE DISPLAY SECTION ==========
         if (_deviceCode.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(20),
@@ -170,6 +210,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header with Copy button
                 Row(
                   children: [
                     Container(
@@ -193,7 +234,10 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                     InkWell(
                       onTap: _copyToClipboard,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: codeColor,
                           borderRadius: BorderRadius.circular(6),
@@ -222,11 +266,12 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Device Code JSON - Removed summary rows, only JSON
+
+                // Device Code JSON Display
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 255, 237, 123),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: codeColor.withOpacity(0.2)),
                   ),
@@ -250,27 +295,29 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                   ),
                 ),
                 const SizedBox(height: 12),
+
+                // Instruction Text
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: codeColor.withOpacity(0.08),
+                    color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: codeColor.withOpacity(0.2)),
+                    border: Border.all(color: Colors.blue.shade200),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.info_outline,
-                        color: codeColor,
+                        color: Colors.blue.shade700,
                         size: 20,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Copy the device code and paste it in the Payroll system to register this device',
+                          'Step 5-8: Copy this code and paste it in the Payroll System to register your device.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: codeColor.withOpacity(0.8),
+                            color: Colors.blue.shade700,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

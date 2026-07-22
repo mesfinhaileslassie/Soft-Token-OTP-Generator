@@ -17,7 +17,7 @@ class _TokenScreenState extends State<TokenScreen> {
   @override
   void initState() {
     super.initState();
-    // Reset token state when screen loads
+    // Check device status when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TokenProvider>().reset();
     });
@@ -32,10 +32,7 @@ class _TokenScreenState extends State<TokenScreen> {
           // Header with #9E0000 background - Behind status bar
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.only(
-              top: 40, // Space for status bar
-              bottom: 12,
-            ),
+            padding: const EdgeInsets.only(top: 40, bottom: 12),
             decoration: BoxDecoration(
               color: AppTheme.primaryColor,
               boxShadow: [
@@ -55,34 +52,6 @@ class _TokenScreenState extends State<TokenScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Top badge icon (shield in soft circle)
-                  Center(
-                    child: Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppTheme.primaryColor.withOpacity(0.08),
-                      ),
-                      child: Center(
-                        child: Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppTheme.primaryColor.withOpacity(0.15),
-                          ),
-                          child: Icon(
-                            Icons.shield_outlined,
-                            color: AppTheme.primaryColor,
-                            size: 32,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
                   // Welcome Message
                   const Text(
                     'Welcome Abebe Berhe',
@@ -101,6 +70,120 @@ class _TokenScreenState extends State<TokenScreen> {
                   ),
                   const SizedBox(height: 24),
 
+                  // Device Status Indicator
+                  Consumer<TokenProvider>(
+                    builder: (context, tokenProvider, child) {
+                      if (tokenProvider.isChecking) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                'Checking device status...',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return Container();
+                    },
+                  ),
+
+                  // Error Message
+                  Consumer<TokenProvider>(
+                    builder: (context, tokenProvider, child) {
+                      if (tokenProvider.errorMessage.isNotEmpty &&
+                          !tokenProvider.canGenerate) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.red.shade700,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Device Not Active',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.red.shade700,
+                                        ),
+                                      ),
+                                      Text(
+                                        tokenProvider.errorMessage,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.red.shade600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      TextButton(
+                                        onPressed: () {
+                                          context.push(
+                                            AppRouter.deviceRegistration,
+                                          );
+                                        },
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: const Size(0, 0),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: Text(
+                                          'Go to Device Registration',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.primaryColor,
+                                            fontWeight: FontWeight.w500,
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
                   // Token Display Card
                   Consumer<TokenProvider>(
                     builder: (context, tokenProvider, child) {
@@ -110,11 +193,9 @@ class _TokenScreenState extends State<TokenScreen> {
                           horizontal: 20,
                         ),
                         decoration: BoxDecoration(
-                          color: tokenProvider.hasToken
-                              ? Colors.amber.shade100
-                              : Colors.amber.shade50,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.amber.shade200),
+                          border: Border.all(color: Colors.grey.shade200),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.grey.shade100,
@@ -126,67 +207,74 @@ class _TokenScreenState extends State<TokenScreen> {
                         child: Column(
                           children: [
                             if (!tokenProvider.hasToken) ...[
-                              // No token state - matches design
                               Icon(
-                                Icons.note_alt_outlined,
-                                size: 40,
-                                color: Colors.amber.shade700,
+                                Icons.security_outlined,
+                                size: 48,
+                                color: Colors.grey.shade400,
                               ),
                               const SizedBox(height: 12),
                               Text(
                                 'No token generated yet',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade800,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade500,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'generate a new token to get strted.',
+                                'generate a new token to get started.',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey.shade500,
+                                  color: Colors.grey.shade400,
                                 ),
                               ),
                             ] else ...[
-                              // Token Display - matches "after click" design
                               Text(
                                 tokenProvider.token,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 42,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1A1A1A),
-                                  letterSpacing: 4,
+                                  color: AppTheme.primaryColor,
+                                  letterSpacing: 6,
                                 ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.timer_outlined,
+                                    color: tokenProvider.secondsRemaining < 10
+                                        ? Colors.red
+                                        : Colors.grey.shade600,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Expires in ${tokenProvider.secondsRemaining} seconds',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: tokenProvider.secondsRemaining < 10
+                                          ? Colors.red
+                                          : Colors.grey.shade600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              LinearProgressIndicator(
+                                value: tokenProvider.secondsRemaining / 30,
+                                backgroundColor: Colors.grey.shade200,
+                                color: tokenProvider.secondsRemaining < 10
+                                    ? Colors.red
+                                    : AppTheme.primaryColor,
+                                minHeight: 4,
+                                borderRadius: BorderRadius.circular(2),
                               ),
                             ],
                           ],
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Expiry text - below the card, right-aligned
-                  Consumer<TokenProvider>(
-                    builder: (context, tokenProvider, child) {
-                      if (!tokenProvider.hasToken) {
-                        return const SizedBox.shrink();
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            'Expires in ${tokenProvider.secondsRemaining} seconds',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: tokenProvider.secondsRemaining < 10
-                                  ? Colors.red
-                                  : Colors.amber.shade800,
-                            ),
-                          ),
                         ),
                       );
                     },
@@ -197,11 +285,15 @@ class _TokenScreenState extends State<TokenScreen> {
                   Consumer<TokenProvider>(
                     builder: (context, tokenProvider, child) {
                       return ElevatedButton(
-                        onPressed: tokenProvider.isGenerating
+                        onPressed:
+                            (!tokenProvider.canGenerate ||
+                                tokenProvider.isGenerating)
                             ? null
                             : () => tokenProvider.generateToken(),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: tokenProvider.canGenerate
+                              ? AppTheme.primaryColor
+                              : Colors.grey.shade400,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
@@ -223,20 +315,17 @@ class _TokenScreenState extends State<TokenScreen> {
                                   color: Colors.white,
                                 ),
                               )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(Icons.vpn_key_outlined, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Generate token'),
-                                ],
+                            : Text(
+                                tokenProvider.canGenerate
+                                    ? 'Generate Token'
+                                    : 'Device Not Active',
                               ),
                       );
                     },
                   ),
                   const SizedBox(height: 16),
 
-                  // Security Note - matches design (icon on right)
+                  // Security Note
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -246,6 +335,12 @@ class _TokenScreenState extends State<TokenScreen> {
                     ),
                     child: Row(
                       children: [
+                        Icon(
+                          Icons.shield_outlined,
+                          color: Colors.amber.shade700,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,12 +364,6 @@ class _TokenScreenState extends State<TokenScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Icon(
-                          Icons.lock_outline,
-                          color: Colors.amber.shade400,
-                          size: 26,
-                        ),
                       ],
                     ),
                   ),
@@ -292,7 +381,6 @@ class _TokenScreenState extends State<TokenScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          // User Avatar
           Container(
             width: 40,
             height: 40,
@@ -314,7 +402,6 @@ class _TokenScreenState extends State<TokenScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          // User Name
           const Expanded(
             child: Text(
               'Abebe Berhe',
@@ -325,7 +412,6 @@ class _TokenScreenState extends State<TokenScreen> {
               ),
             ),
           ),
-          // Logout Button
           TextButton.icon(
             onPressed: () {
               _showLogoutDialog(context);
@@ -375,7 +461,6 @@ class _TokenScreenState extends State<TokenScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                // Navigate to login screen
                 context.go(AppRouter.login);
               },
               style: ElevatedButton.styleFrom(

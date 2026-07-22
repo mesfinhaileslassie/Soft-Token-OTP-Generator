@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
+import 'package:payroll_soft_token_app/core/services/storage_service.dart';
+import 'package:payroll_soft_token_app/core/services/api_service.dart';
+import 'package:payroll_soft_token_app/core/crypto/crypto_service.dart';
 
 class ActivationForm extends StatefulWidget {
   const ActivationForm({super.key});
@@ -30,7 +33,7 @@ class _ActivationFormState extends State<ActivationForm> {
     super.dispose();
   }
 
-  void _handleActivate() {
+  Future<void> _handleActivate() async {
     final code = _controllers.map((c) => c.text).join();
     if (code.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,17 +49,165 @@ class _ActivationFormState extends State<ActivationForm> {
       _isLoading = true;
     });
 
-    // Simulate activation process
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+
+      if (session == null || session['username'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please login first'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final username = session['username'];
+
+      // Step 14: Get device ID from storage
+      final deviceId = await storage.getDeviceId(username);
+      if (deviceId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No device found. Please generate a device code first.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Step 14: Activate device with activation code
+      final apiService = ApiService();
+      final activateResult = await apiService.activateDevice(
+        deviceId: deviceId,
+        activationCode: code,
+      );
+
+      if (!activateResult['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(activateResult['message'] ?? 'Activation failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Step 15: Store activation code temporarily and mark as pending
+      await storage.setActivationPending(username, code);
+
+      // Step 16: Get challenge from Payroll System
+      final challengeResult = await apiService.getChallenge(deviceId: deviceId);
+
+      if (!challengeResult['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              challengeResult['message'] ?? 'Failed to get challenge',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final challenge = challengeResult['data']['challenge'];
+
+      // Step 17: Get private key from storage
+      final tempKeys = await storage.getTemporaryKeys(username);
+      if (tempKeys == null || tempKeys['privateKey'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Private key not found. Please regenerate device code.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Step 18: Sign challenge using Private Key
+      final cryptoService = CryptoService();
+      final signature = cryptoService.signChallenge(
+        challenge,
+        tempKeys['privateKey']!,
+      );
+
+      // Step 19: Send signature to Payroll System
+      final verifyResult = await apiService.verifySignature(
+        deviceId: deviceId,
+        signature: signature,
+      );
+
       setState(() {
         _isLoading = false;
       });
 
-      // Navigate to Activation Success screen
-      if (mounted) {
-        context.go(AppRouter.activationSuccess);
+      if (verifyResult['success']) {
+        final data = verifyResult['data'];
+
+        // Step 22-23: Store Device Token, Secret Key, and all keys
+        await storage.saveDeviceCredentials(
+          username,
+          data['deviceToken'] ?? '',
+          data['secretKey'] ?? '',
+        );
+
+        // Step 21: Mark device as active and trusted
+        await storage.markDeviceActive(username);
+
+        // Step 23: Store private key permanently
+        await storage.savePrivateKey(username, tempKeys['privateKey']!);
+        await storage.savePublicKey(username, tempKeys['publicKey']!);
+        await storage.saveInstallationId(username, tempKeys['installationId']!);
+
+        // Clear activation pending
+        await storage.clearActivationPending(username);
+
+        // Navigate to Activation Success
+        if (mounted) {
+          context.go(AppRouter.activationSuccess);
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              verifyResult['message'] ?? 'Signature verification failed',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-    });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _onCodeChanged(String value, int index) {
@@ -70,7 +221,6 @@ class _ActivationFormState extends State<ActivationForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Device Verification
         const Text(
           'Device Verification',
           style: TextStyle(
@@ -81,12 +231,11 @@ class _ActivationFormState extends State<ActivationForm> {
         ),
         const SizedBox(height: 4),
         Text(
-          'This code securely links your device to your account',
+          'Enter the activation code from the Payroll System',
           style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
         ),
         const SizedBox(height: 16),
 
-        // 6-Digit Code Boxes
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -195,7 +344,6 @@ class _ActivationFormState extends State<ActivationForm> {
         ),
         const SizedBox(height: 24),
 
-        // Activate Device Button
         ElevatedButton(
           onPressed: _isLoading ? null : _handleActivate,
           style: ElevatedButton.styleFrom(
