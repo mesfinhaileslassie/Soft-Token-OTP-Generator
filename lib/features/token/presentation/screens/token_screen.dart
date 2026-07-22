@@ -17,7 +17,6 @@ class _TokenScreenState extends State<TokenScreen> {
   @override
   void initState() {
     super.initState();
-    // Check device status when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TokenProvider>().reset();
     });
@@ -29,7 +28,7 @@ class _TokenScreenState extends State<TokenScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header with #9E0000 background - Behind status bar
+          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(top: 40, bottom: 12),
@@ -52,7 +51,6 @@ class _TokenScreenState extends State<TokenScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Welcome Message
                   const Text(
                     'Welcome Abebe Berhe',
                     style: TextStyle(
@@ -64,13 +62,13 @@ class _TokenScreenState extends State<TokenScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'click the button below to generate a new token',
+                    'Click the button below to generate a new token',
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
 
-                  // Device Status Indicator
+                  // Device Status
                   Consumer<TokenProvider>(
                     builder: (context, tokenProvider, child) {
                       if (tokenProvider.isChecking) {
@@ -102,7 +100,7 @@ class _TokenScreenState extends State<TokenScreen> {
                           ),
                         );
                       }
-                      return Container();
+                      return const SizedBox.shrink();
                     },
                   ),
 
@@ -223,7 +221,7 @@ class _TokenScreenState extends State<TokenScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'generate a new token to get started.',
+                                'Generate a new token to get started.',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey.shade400,
@@ -279,7 +277,7 @@ class _TokenScreenState extends State<TokenScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
                   // Generate Token Button
                   Consumer<TokenProvider>(

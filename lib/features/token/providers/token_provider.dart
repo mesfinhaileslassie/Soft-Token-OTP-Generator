@@ -1,8 +1,9 @@
 // lib/features/token/providers/token_provider.dart
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
-import 'package:payroll_soft_token_app/core/services/api_service.dart';
 
 class TokenProvider extends ChangeNotifier {
   String _token = '';
@@ -46,8 +47,6 @@ class TokenProvider extends ChangeNotifier {
       }
 
       final username = session['username'];
-
-      // Check if device is active and trusted
       final isActive = await storage.isDeviceTrusted(username);
       final status = await storage.getDeviceStatus(username);
 
@@ -67,8 +66,7 @@ class TokenProvider extends ChangeNotifier {
     }
   }
 
-  void generateToken() {
-    // Step 1: Check if device can generate token
+  Future<void> generateToken() async {
     if (!_canGenerate) {
       _errorMessage =
           'Device is not active. Please activate your device first.';
@@ -84,11 +82,58 @@ class TokenProvider extends ChangeNotifier {
     });
     notifyListeners();
 
-    // Simulate generation delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      // Generate a random 6-digit token
-      final random = DateTime.now().millisecondsSinceEpoch;
-      final tokenValue = (random % 900000 + 100000).toString();
+    try {
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+
+      if (session == null || session['username'] == null) {
+        setState(() {
+          _isGenerating = false;
+          _errorMessage = 'Please login first';
+        });
+        return;
+      }
+
+      final username = session['username'];
+      final credentials = await storage.getDeviceCredentials(username);
+
+      if (credentials == null || credentials['secretKey'] == null) {
+        setState(() {
+          _isGenerating = false;
+          _errorMessage = 'Secret key not found. Please re-activate device.';
+        });
+        return;
+      }
+
+      final secretKey = credentials['secretKey']!;
+
+      // Use UTC time to match backend
+      final timestamp = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+      final counter = timestamp ~/ 30;
+
+      // Same algorithm as backend: SHA256(secretKey + counter)
+      final combined = '$secretKey:$counter';
+      final bytes = utf8.encode(combined);
+      final hash = sha256.convert(bytes);
+      final hashString = hash.toString();
+
+      // Extract 6 digits
+      String tokenValue = '';
+      for (int i = 0; i < hashString.length && tokenValue.length < 6; i++) {
+        if (hashString[i].contains(RegExp(r'[0-9]'))) {
+          tokenValue += hashString[i];
+        }
+      }
+      while (tokenValue.length < 6) {
+        tokenValue = '0$tokenValue';
+      }
+      tokenValue = tokenValue.substring(0, 6);
+
+      // Debug prints
+      print('🔑 SECRET KEY: $secretKey');
+      print('⏰ UTC Time: ${DateTime.now().toUtc()}');
+      print('🔄 Counter: $counter');
+      print('🎫 GENERATED TOKEN: $tokenValue');
 
       setState(() {
         _token = tokenValue;
@@ -99,9 +144,13 @@ class TokenProvider extends ChangeNotifier {
       });
       notifyListeners();
 
-      // Start timer
       _startTimer();
-    });
+    } catch (e) {
+      setState(() {
+        _isGenerating = false;
+        _errorMessage = 'Error: ${e.toString()}';
+      });
+    }
   }
 
   void _startTimer() {
@@ -112,7 +161,6 @@ class TokenProvider extends ChangeNotifier {
         notifyListeners();
       } else {
         timer.cancel();
-        // When timer expires, clear the token
         _hasToken = false;
         _token = '';
         notifyListeners();
