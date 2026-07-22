@@ -27,7 +27,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
     });
 
     try {
-      // Step 2: Collect device info
+      // Step 2: Automatically collect device info
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
 
@@ -37,7 +37,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
       final privateKey = _generatePrivateKey();
       final serialNumber = androidInfo.serialNumber ?? 'Unknown';
 
-      // Step 4: Generate Device Code containing Android ID, Device Model, Serial Number, Installation ID, Public Key
+      // Step 4: Create Device Code
       final deviceCodeData = {
         'android_id': androidInfo.id,
         'device_model': androidInfo.model,
@@ -115,10 +115,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
       setState(() {
         _isCopied = true;
       });
-      _showSnackBar(
-        'Device code copied! Paste it in Payroll System.',
-        Colors.green,
-      );
+      _showSnackBar('Device code copied!', Colors.green);
     }
   }
 
@@ -127,7 +124,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ========== GENERATE DEVICE CODE SECTION ==========
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -160,7 +156,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
               ),
               const SizedBox(height: 20),
 
-              // GENERATE DEVICE CODE BUTTON
               ElevatedButton(
                 onPressed: _isGenerating ? null : _generateDeviceCode,
                 style: ElevatedButton.styleFrom(
@@ -191,7 +186,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         ),
         const SizedBox(height: 20),
 
-        // ========== DEVICE CODE DISPLAY SECTION ==========
         if (_deviceCode.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(20),
@@ -210,7 +204,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with Copy button
                 Row(
                   children: [
                     Container(
@@ -267,7 +260,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                 ),
                 const SizedBox(height: 12),
 
-                // Device Code JSON Display
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -296,7 +288,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                 ),
                 const SizedBox(height: 12),
 
-                // Instruction Text
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(

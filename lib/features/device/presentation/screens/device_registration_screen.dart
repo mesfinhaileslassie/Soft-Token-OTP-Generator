@@ -30,7 +30,6 @@ class DeviceRegistrationScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
             const Text(
               'Device Registration',
               style: TextStyle(
@@ -46,11 +45,9 @@ class DeviceRegistrationScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Device Information Card
             const DeviceInfoCard(),
             const SizedBox(height: 24),
 
-            // Device Code Generator
             const DeviceCodeGenerator(),
             const SizedBox(height: 20),
 

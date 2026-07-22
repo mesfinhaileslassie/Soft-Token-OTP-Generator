@@ -17,8 +17,7 @@ class StorageService {
     return _instance;
   }
 
-  // ==================== USER MANAGEMENT ====================
-
+  // Get all users
   Future<Map<String, dynamic>> getUsers() async {
     final usersJson = _preferences!.getString('users');
     if (usersJson == null || usersJson.isEmpty) {
@@ -56,19 +55,7 @@ class StorageService {
     }
   }
 
-  Future<void> deleteUser(String username) async {
-    final users = await getUsers();
-    users.remove(username);
-    await _preferences!.setString('users', jsonEncode(users));
-  }
-
-  Future<bool> userExists(String username) async {
-    final user = await getUser(username);
-    return user != null;
-  }
-
-  // ==================== SESSION MANAGEMENT ====================
-
+  // Session Management
   Future<void> saveSession(String username, String token) async {
     await _preferences!.setString(
       'current_session',
@@ -96,53 +83,7 @@ class StorageService {
     await _preferences!.remove('current_session');
   }
 
-  Future<bool> isLoggedIn() async {
-    final session = await getSession();
-    if (session != null && session['username'] != null) {
-      return await userExists(session['username']);
-    }
-    return false;
-  }
-
-  Future<Map<String, dynamic>?> getCurrentUser() async {
-    final session = await getSession();
-    if (session != null && session['username'] != null) {
-      return await getUser(session['username']);
-    }
-    return null;
-  }
-
-  // ==================== DEVICE MANAGEMENT ====================
-
-  Future<void> saveDevice(
-    String username,
-    Map<String, dynamic> deviceData,
-  ) async {
-    final user = await getUser(username);
-    if (user != null) {
-      final devices = user['devices'] as List? ?? [];
-      devices.add(deviceData);
-      user['devices'] = devices;
-      await updateUser(username, user);
-    }
-  }
-
-  Future<List<dynamic>> getUserDevices(String username) async {
-    final user = await getUser(username);
-    if (user != null) {
-      return user['devices'] as List? ?? [];
-    }
-    return [];
-  }
-
-  Future<void> saveDeviceCode(String username, String deviceCode) async {
-    await _preferences!.setString('device_code_$username', deviceCode);
-  }
-
-  Future<String?> getDeviceCode(String username) async {
-    return _preferences!.getString('device_code_$username');
-  }
-
+  // Device Management
   Future<void> saveDeviceId(String username, int deviceId) async {
     final user = await getUser(username);
     if (user != null) {
@@ -159,8 +100,11 @@ class StorageService {
     return null;
   }
 
-  // ==================== TEMPORARY KEYS ====================
+  Future<void> saveDeviceCode(String username, String deviceCode) async {
+    await _preferences!.setString('device_code_$username', deviceCode);
+  }
 
+  // Temporary Keys (before activation)
   Future<void> saveTemporaryKeys(
     String username,
     String installationId,
@@ -188,8 +132,7 @@ class StorageService {
     return null;
   }
 
-  // ==================== ACTIVATION MANAGEMENT ====================
-
+  // Activation Management
   Future<void> setActivationPending(
     String username,
     String activationCode,
@@ -219,8 +162,7 @@ class StorageService {
     }
   }
 
-  // ==================== DEVICE CREDENTIALS ====================
-
+  // Device Credentials (after activation)
   Future<void> saveDeviceCredentials(
     String username,
     String deviceToken,
@@ -245,8 +187,7 @@ class StorageService {
     return null;
   }
 
-  // ==================== DEVICE STATUS ====================
-
+  // Device Status
   Future<void> markDeviceActive(String username) async {
     final user = await getUser(username);
     if (user != null) {
@@ -272,8 +213,7 @@ class StorageService {
     return false;
   }
 
-  // ==================== PERMANENT KEY STORAGE ====================
-
+  // Permanent Key Storage (after activation)
   Future<void> savePrivateKey(String username, String privateKey) async {
     final user = await getUser(username);
     if (user != null) {
@@ -325,31 +265,13 @@ class StorageService {
     return null;
   }
 
-  // ==================== API CONFIGURATION ====================
-
-  Future<void> saveApiBaseUrl(String url) async {
-    await _preferences!.setString('api_base_url', url);
-  }
-
+  // API Configuration
   Future<String> getApiBaseUrl() async {
     return _preferences!.getString('api_base_url') ??
-        'http://localhost:5062/api';
+        'https://radial-settle-docile.ngrok-free.dev/api';
   }
-
-  // ==================== UTILITY ====================
 
   Future<void> clearAllData() async {
     await _preferences!.clear();
-  }
-
-  Future<void> printAllData() async {
-    print('=== STORAGE DATA ===');
-    final users = await getUsers();
-    print('Users: $users');
-    final session = await getSession();
-    print('Session: $session');
-    final apiUrl = await getApiBaseUrl();
-    print('API URL: $apiUrl');
-    print('=== END STORAGE DATA ===');
   }
 }
