@@ -8,14 +8,12 @@ import 'package:payroll_soft_token_app/features/device/presentation/screens/devi
 import 'package:payroll_soft_token_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_success_screen.dart';
-import 'package:payroll_soft_token_app/features/home/presentation/screens/home_screen.dart';
 
 class AppRouter {
   static const String login = '/login';
   static const String register = '/register';
-  static const String home = '/home';
-  static const String deviceRegistration = '/device-registration';
   static const String token = '/token';
+  static const String deviceRegistration = '/device-registration';
   static const String profile = '/profile';
   static const String activation = '/activation';
   static const String activationSuccess = '/activation-success';
@@ -23,7 +21,6 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: login,
     redirect: (context, state) {
-      // You can add redirect logic here if needed
       return null;
     },
     routes: [
@@ -36,11 +33,6 @@ class AppRouter {
         path: register,
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
-      ),
-      GoRoute(
-        path: home,
-        name: 'home',
-        builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
         path: token,

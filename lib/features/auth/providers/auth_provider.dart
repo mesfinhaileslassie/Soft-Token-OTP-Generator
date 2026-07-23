@@ -11,6 +11,7 @@ class AuthProvider extends ChangeNotifier {
   String? _errorMessage;
   BuildContext? _navigationContext;
   bool _isDisposed = false;
+  bool _isNavigating = false;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
@@ -22,7 +23,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void setNavigationContext(BuildContext context) {
-    _navigationContext = context;
+    if (!_isDisposed) {
+      _navigationContext = context;
+    }
   }
 
   @override
@@ -43,21 +46,7 @@ class AuthProvider extends ChangeNotifier {
           _username = session['username'];
           notifyListeners();
 
-          // Check if device is already registered
-          final deviceId = await storage.getDeviceId(session['username']);
-          final isRegistered = deviceId != null;
-
-          if (_navigationContext != null && !_isDisposed) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!_isDisposed && _navigationContext != null) {
-                try {
-                  GoRouter.of(_navigationContext!).go('/home');
-                } catch (e) {
-                  print('❌ Navigation error: $e');
-                }
-              }
-            });
-          }
+          _navigateToToken();
         } else {
           await storage.clearSession();
         }
@@ -65,6 +54,38 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       // Handle error silently
     }
+  }
+
+  void _navigateToToken() {
+    if (_isDisposed || _isNavigating || _navigationContext == null) return;
+
+    _isNavigating = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && _navigationContext != null) {
+        try {
+          GoRouter.of(_navigationContext!).go('/token');
+        } catch (e) {
+          print('Navigation error: $e');
+        }
+      }
+      _isNavigating = false;
+    });
+  }
+
+  void _navigateToLogin() {
+    if (_isDisposed || _isNavigating || _navigationContext == null) return;
+
+    _isNavigating = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && _navigationContext != null) {
+        try {
+          GoRouter.of(_navigationContext!).go('/login');
+        } catch (e) {
+          print('Navigation error: $e');
+        }
+      }
+      _isNavigating = false;
+    });
   }
 
   Future<void> login({
@@ -114,13 +135,7 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
 
-      if (_navigationContext != null && !_isDisposed) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!_isDisposed && _navigationContext != null) {
-            GoRouter.of(_navigationContext!).go('/home');
-          }
-        });
-      }
+      _navigateToToken();
     } catch (e) {
       _errorMessage = 'An error occurred during login: ${e.toString()}';
       _isLoading = false;
@@ -140,13 +155,7 @@ class AuthProvider extends ChangeNotifier {
       _username = null;
       notifyListeners();
 
-      if (_navigationContext != null && !_isDisposed) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!_isDisposed && _navigationContext != null) {
-            GoRouter.of(_navigationContext!).go('/login');
-          }
-        });
-      }
+      _navigateToLogin();
     } catch (e) {
       // Handle error silently
     }
@@ -155,20 +164,5 @@ class AuthProvider extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
-  }
-
-  // Check if device is registered
-  Future<bool> isDeviceRegistered() async {
-    try {
-      final storage = await StorageService.getInstance();
-      final session = await storage.getSession();
-      if (session != null && session['username'] != null) {
-        final deviceId = await storage.getDeviceId(session['username']);
-        return deviceId != null;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
   }
 }

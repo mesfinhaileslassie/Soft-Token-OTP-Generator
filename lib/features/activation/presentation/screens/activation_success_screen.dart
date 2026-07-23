@@ -17,7 +17,10 @@ class ActivationSuccessScreen extends StatelessWidget {
             // Header with #9E0000 background
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(top: 40, bottom: 16),
+              padding: const EdgeInsets.only(
+                top: 40,
+                bottom: 16,
+              ),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor,
                 boxShadow: [
@@ -85,10 +88,7 @@ class ActivationSuccessScreen extends StatelessWidget {
             // Main Content
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 32,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -130,10 +130,10 @@ class ActivationSuccessScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
-                    // Continue to Login Button
+                    // Continue to Token Screen Button
                     ElevatedButton(
                       onPressed: () {
-                        context.go(AppRouter.home);
+                        context.go(AppRouter.token);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
@@ -149,7 +149,7 @@ class ActivationSuccessScreen extends StatelessWidget {
                           letterSpacing: 0.5,
                         ),
                       ),
-                      child: const Text('Continue to Login'),
+                      child: const Text('Continue to Home'),
                     ),
                   ],
                 ),

@@ -28,7 +28,7 @@ class _TokenScreenState extends State<TokenScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header
+          // Header with #9E0000 background
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(top: 40, bottom: 12),
@@ -63,7 +63,10 @@ class _TokenScreenState extends State<TokenScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Click the button below to generate a new token',
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
@@ -107,8 +110,7 @@ class _TokenScreenState extends State<TokenScreen> {
                   // Error Message
                   Consumer<TokenProvider>(
                     builder: (context, tokenProvider, child) {
-                      if (tokenProvider.errorMessage.isNotEmpty &&
-                          !tokenProvider.canGenerate) {
+                      if (tokenProvider.errorMessage.isNotEmpty && !tokenProvider.canGenerate) {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: Container(
@@ -128,8 +130,7 @@ class _TokenScreenState extends State<TokenScreen> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Device Not Active',
@@ -149,15 +150,12 @@ class _TokenScreenState extends State<TokenScreen> {
                                       const SizedBox(height: 4),
                                       TextButton(
                                         onPressed: () {
-                                          context.push(
-                                            AppRouter.deviceRegistration,
-                                          );
+                                          context.push(AppRouter.deviceRegistration);
                                         },
                                         style: TextButton.styleFrom(
                                           padding: EdgeInsets.zero,
                                           minimumSize: const Size(0, 0),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text(
                                           'Go to Device Registration',
@@ -165,8 +163,7 @@ class _TokenScreenState extends State<TokenScreen> {
                                             fontSize: 12,
                                             color: AppTheme.primaryColor,
                                             fontWeight: FontWeight.w500,
-                                            decoration:
-                                                TextDecoration.underline,
+                                            decoration: TextDecoration.underline,
                                           ),
                                         ),
                                       ),
@@ -186,10 +183,7 @@ class _TokenScreenState extends State<TokenScreen> {
                   Consumer<TokenProvider>(
                     builder: (context, tokenProvider, child) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 32,
-                          horizontal: 20,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -243,8 +237,8 @@ class _TokenScreenState extends State<TokenScreen> {
                                 children: [
                                   Icon(
                                     Icons.timer_outlined,
-                                    color: tokenProvider.secondsRemaining < 10
-                                        ? Colors.red
+                                    color: tokenProvider.secondsRemaining < 10 
+                                        ? Colors.red 
                                         : Colors.grey.shade600,
                                     size: 18,
                                   ),
@@ -253,8 +247,8 @@ class _TokenScreenState extends State<TokenScreen> {
                                     'Expires in ${tokenProvider.secondsRemaining} seconds',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: tokenProvider.secondsRemaining < 10
-                                          ? Colors.red
+                                      color: tokenProvider.secondsRemaining < 10 
+                                          ? Colors.red 
                                           : Colors.grey.shade600,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -265,8 +259,8 @@ class _TokenScreenState extends State<TokenScreen> {
                               LinearProgressIndicator(
                                 value: tokenProvider.secondsRemaining / 30,
                                 backgroundColor: Colors.grey.shade200,
-                                color: tokenProvider.secondsRemaining < 10
-                                    ? Colors.red
+                                color: tokenProvider.secondsRemaining < 10 
+                                    ? Colors.red 
                                     : AppTheme.primaryColor,
                                 minHeight: 4,
                                 borderRadius: BorderRadius.circular(2),
@@ -283,14 +277,12 @@ class _TokenScreenState extends State<TokenScreen> {
                   Consumer<TokenProvider>(
                     builder: (context, tokenProvider, child) {
                       return ElevatedButton(
-                        onPressed:
-                            (!tokenProvider.canGenerate ||
-                                tokenProvider.isGenerating)
-                            ? null
+                        onPressed: (!tokenProvider.canGenerate || tokenProvider.isGenerating) 
+                            ? null 
                             : () => tokenProvider.generateToken(),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tokenProvider.canGenerate
-                              ? AppTheme.primaryColor
+                          backgroundColor: tokenProvider.canGenerate 
+                              ? AppTheme.primaryColor 
                               : Colors.grey.shade400,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 50),
@@ -313,11 +305,9 @@ class _TokenScreenState extends State<TokenScreen> {
                                   color: Colors.white,
                                 ),
                               )
-                            : Text(
-                                tokenProvider.canGenerate
-                                    ? 'Generate Token'
-                                    : 'Device Not Active',
-                              ),
+                            : Text(tokenProvider.canGenerate 
+                                ? 'Generate Token' 
+                                : 'Device Not Active'),
                       );
                     },
                   ),
@@ -379,42 +369,58 @@ class _TokenScreenState extends State<TokenScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.person,
-              color: AppTheme.primaryColor,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Abebe Berhe',
-              style: TextStyle(
-                fontSize: 16,
+          // Profile Button
+          GestureDetector(
+            onTap: () {
+              context.push(AppRouter.profile);
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
                 color: Colors.white,
-                fontWeight: FontWeight.w600,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.person,
+                color: AppTheme.primaryColor,
+                size: 22,
               ),
             ),
           ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                context.push(AppRouter.profile);
+              },
+              child: const Text(
+                'Abebe Berhe',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          // Logout Button
           TextButton.icon(
             onPressed: () {
               _showLogoutDialog(context);
             },
-            icon: const Icon(Icons.logout, color: Colors.white, size: 18),
+            icon: const Icon(
+              Icons.logout,
+              color: Colors.white,
+              size: 18,
+            ),
             label: const Text(
               'Logout',
               style: TextStyle(
@@ -453,12 +459,15 @@ class _TokenScreenState extends State<TokenScreen> {
               },
               child: Text(
                 'Cancel',
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                ),
               ),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
+                // ✅ Navigate to login
                 context.go(AppRouter.login);
               },
               style: ElevatedButton.styleFrom(
