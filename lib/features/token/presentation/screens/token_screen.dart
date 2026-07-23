@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/features/token/providers/token_provider.dart';
+import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 import 'package:provider/provider.dart';
 
 class TokenScreen extends StatefulWidget {
@@ -14,12 +15,40 @@ class TokenScreen extends StatefulWidget {
 }
 
 class _TokenScreenState extends State<TokenScreen> {
+  String _userName = 'User';
+
   @override
   void initState() {
     super.initState();
+    _loadUserName();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TokenProvider>().reset();
     });
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+      if (session != null && session['username'] != null) {
+        final user = await storage.getUser(session['username']);
+        if (user != null) {
+          final firstName = user['firstName'] ?? '';
+          final lastName = user['lastName'] ?? '';
+          if (firstName.isNotEmpty || lastName.isNotEmpty) {
+            setState(() {
+              _userName = '$firstName $lastName'.trim();
+            });
+          } else {
+            setState(() {
+              _userName = session['username'];
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading user name: $e');
+    }
   }
 
   @override
@@ -51,8 +80,8 @@ class _TokenScreenState extends State<TokenScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Welcome Abebe Berhe',
+                  Text(
+                    'Welcome $_userName',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -401,9 +430,9 @@ class _TokenScreenState extends State<TokenScreen> {
               onTap: () {
                 context.push(AppRouter.profile);
               },
-              child: const Text(
-                'Abebe Berhe',
-                style: TextStyle(
+              child: Text(
+                _userName,
+                style: const TextStyle(
                   fontSize: 16,
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -467,7 +496,6 @@ class _TokenScreenState extends State<TokenScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                // ✅ Navigate to login
                 context.go(AppRouter.login);
               },
               style: ElevatedButton.styleFrom(

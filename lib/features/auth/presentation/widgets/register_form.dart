@@ -5,6 +5,7 @@ import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/utils/validators.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
+import 'package:payroll_soft_token_app/core/services/api_service.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -51,7 +52,7 @@ class _RegisterFormState extends State<RegisterForm> {
         final storage = await StorageService.getInstance();
         final username = _usernameController.text.trim();
 
-        // Check if username already exists
+        // Check if username already exists in local storage
         final existingUser = await storage.getUser(username);
         if (existingUser != null) {
           setState(() {
@@ -67,7 +68,35 @@ class _RegisterFormState extends State<RegisterForm> {
           return;
         }
 
-        // Create user object
+        // ✅ Register user in database
+        final apiService = ApiService();
+        final apiResult = await apiService.registerUser(
+          username: username,
+          email: '${username}@example.com',
+          password: _passwordController.text,
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          gender: _selectedGender ?? '',
+        );
+
+        if (!apiResult['success']) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                apiResult['message'] ?? 'Registration failed in database',
+              ),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return;
+        }
+
+        // Create user object for local storage
         final userData = {
           'username': username,
           'firstName': _firstNameController.text.trim(),
@@ -87,7 +116,6 @@ class _RegisterFormState extends State<RegisterForm> {
           _isLoading = false;
         });
 
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Registration successful! Please login.'),
@@ -96,9 +124,7 @@ class _RegisterFormState extends State<RegisterForm> {
           ),
         );
 
-        // Navigate to login page
         if (mounted) {
-          // Use go() instead of push() to replace the current route
           context.go(AppRouter.login);
         }
       } catch (e) {
