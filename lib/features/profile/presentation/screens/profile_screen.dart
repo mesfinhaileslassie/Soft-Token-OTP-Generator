@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
+import 'package:payroll_soft_token_app/features/profile/presentation/screens/change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -238,12 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: InkWell(
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Change Password coming soon!'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          context.push('/change-password');
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

@@ -8,6 +8,7 @@ import 'package:payroll_soft_token_app/features/device/presentation/screens/devi
 import 'package:payroll_soft_token_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_success_screen.dart';
+import 'package:payroll_soft_token_app/features/profile/presentation/screens/change_password_screen.dart';
 
 class AppRouter {
   static const String login = '/login';
@@ -58,6 +59,11 @@ class AppRouter {
         path: activationSuccess,
         name: 'activation-success',
         builder: (context, state) => const ActivationSuccessScreen(),
+      ),
+      GoRoute(
+        path: '/change-password',
+        name: 'change-password',
+        builder: (context, state) => const ChangePasswordScreen(),
       ),
     ],
   );
