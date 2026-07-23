@@ -107,17 +107,22 @@ class TokenProvider extends ChangeNotifier {
 
       final secretKey = credentials['secretKey']!;
 
-      // Use UTC time to match backend
-      final timestamp = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-      final counter = timestamp ~/ 30;
+      // ✅ Use UTC time to match backend
+      final timeInSeconds =
+          DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+      final counter = timeInSeconds ~/ 30;
 
-      // Same algorithm as backend: SHA256(secretKey + counter)
+      print('🔑 SECRET KEY: $secretKey');
+      print('⏰ Flutter UTC Time: ${DateTime.now().toUtc()}');
+      print('🔄 Flutter Counter: $counter');
+
+      // ✅ Same algorithm as backend: SHA256(secretKey + counter)
       final combined = '$secretKey:$counter';
       final bytes = utf8.encode(combined);
       final hash = sha256.convert(bytes);
       final hashString = hash.toString();
 
-      // Extract 6 digits
+      // ✅ Extract 6 digits (same as backend)
       String tokenValue = '';
       for (int i = 0; i < hashString.length && tokenValue.length < 6; i++) {
         if (hashString[i].contains(RegExp(r'[0-9]'))) {
@@ -129,11 +134,7 @@ class TokenProvider extends ChangeNotifier {
       }
       tokenValue = tokenValue.substring(0, 6);
 
-      // Debug prints
-      print('🔑 SECRET KEY: $secretKey');
-      print('⏰ UTC Time: ${DateTime.now().toUtc()}');
-      print('🔄 Counter: $counter');
-      print('🎫 GENERATED TOKEN: $tokenValue');
+      print('🎫 FLUTTER TOKEN: $tokenValue');
 
       setState(() {
         _token = tokenValue;
