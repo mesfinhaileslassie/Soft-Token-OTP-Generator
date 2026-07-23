@@ -19,7 +19,8 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   AuthProvider() {
-    _checkAuthStatus();
+    // ✅ DON'T auto-check auth status on startup
+    // _checkAuthStatus(); // COMMENT THIS OUT
   }
 
   void setNavigationContext(BuildContext context) {
@@ -35,26 +36,8 @@ class AuthProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<void> _checkAuthStatus() async {
-    try {
-      final storage = await StorageService.getInstance();
-      final session = await storage.getSession();
-      if (session != null && session['username'] != null) {
-        final user = await storage.getUser(session['username']);
-        if (user != null) {
-          _isAuthenticated = true;
-          _username = session['username'];
-          notifyListeners();
-
-          _navigateToToken();
-        } else {
-          await storage.clearSession();
-        }
-      }
-    } catch (e) {
-      // Handle error silently
-    }
-  }
+  // Remove or comment out the auto-check method
+  // Future<void> _checkAuthStatus() async { ... }
 
   void _navigateToToken() {
     if (_isDisposed || _isNavigating || _navigationContext == null) return;

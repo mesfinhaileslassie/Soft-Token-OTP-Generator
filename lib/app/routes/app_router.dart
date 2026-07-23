@@ -6,9 +6,9 @@ import 'package:payroll_soft_token_app/features/auth/presentation/screens/regist
 import 'package:payroll_soft_token_app/features/token/presentation/screens/token_screen.dart';
 import 'package:payroll_soft_token_app/features/device/presentation/screens/device_registration_screen.dart';
 import 'package:payroll_soft_token_app/features/profile/presentation/screens/profile_screen.dart';
+import 'package:payroll_soft_token_app/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_success_screen.dart';
-import 'package:payroll_soft_token_app/features/profile/presentation/screens/change_password_screen.dart';
 
 class AppRouter {
   static const String login = '/login';
@@ -16,12 +16,14 @@ class AppRouter {
   static const String token = '/token';
   static const String deviceRegistration = '/device-registration';
   static const String profile = '/profile';
+  static const String changePassword = '/change-password';
   static const String activation = '/activation';
   static const String activationSuccess = '/activation-success';
 
   static final GoRouter router = GoRouter(
-    initialLocation: login,
+    initialLocation: login,  // ✅ This ensures login page is shown first
     redirect: (context, state) {
+      // You can add redirect logic here if needed
       return null;
     },
     routes: [
@@ -51,6 +53,11 @@ class AppRouter {
         builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
+        path: changePassword,
+        name: 'change-password',
+        builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
         path: activation,
         name: 'activation',
         builder: (context, state) => const ActivationScreen(),
@@ -59,11 +66,6 @@ class AppRouter {
         path: activationSuccess,
         name: 'activation-success',
         builder: (context, state) => const ActivationSuccessScreen(),
-      ),
-      GoRoute(
-        path: '/change-password',
-        name: 'change-password',
-        builder: (context, state) => const ChangePasswordScreen(),
       ),
     ],
   );
