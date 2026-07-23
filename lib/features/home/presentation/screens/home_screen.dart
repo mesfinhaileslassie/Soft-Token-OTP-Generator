@@ -14,7 +14,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isDeviceRegistered = false;
+  bool _isDeviceActivated = false;
   bool _isLoading = true;
+  String _deviceStatus = '';
+  String _debugInfo = '';
 
   @override
   void initState() {
@@ -22,25 +25,110 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkDeviceRegistration();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkDeviceRegistration();
+  }
+
   Future<void> _checkDeviceRegistration() async {
+    print('🔍 ===== CHECKING DEVICE REGISTRATION =====');
     try {
       final storage = await StorageService.getInstance();
       final session = await storage.getSession();
+
+      print('🔍 Session: $session');
+
       if (session != null && session['username'] != null) {
-        final deviceId = await storage.getDeviceId(session['username']);
+        final username = session['username'];
+        print('🔍 Username: $username');
+
+        final user = await storage.getUser(username);
+        print('🔍 Full user data: $user');
+
+        final deviceId = await storage.getDeviceId(username);
+        print('🔍 Device ID from storage: $deviceId');
+
+        final status = await storage.getDeviceStatus(username);
+        print('🔍 Device status: $status');
+
+        final isTrusted = await storage.isDeviceTrusted(username);
+        print('🔍 Is device trusted: $isTrusted');
+
+        final credentials = await storage.getDeviceCredentials(username);
+        print('🔍 Device credentials: $credentials');
+
         setState(() {
           _isDeviceRegistered = deviceId != null;
+          _isDeviceActivated = isTrusted && status == 'ACTIVE';
+          _deviceStatus = status;
           _isLoading = false;
+          _debugInfo =
+              '''
+Username: $username
+Device ID: $deviceId
+Status: $status
+Trusted: $isTrusted
+Registered: ${deviceId != null}
+Active: ${isTrusted && status == 'ACTIVE'}
+''';
         });
       } else {
+        print('🔍 No active session found');
         setState(() {
           _isLoading = false;
+          _debugInfo = 'No active session';
         });
       }
     } catch (e) {
+      print('❌ Error checking device: $e');
       setState(() {
         _isLoading = false;
+        _debugInfo = 'Error: $e';
       });
+    }
+    print('🔍 ===== END CHECK =====');
+  }
+
+  // 🔍 Debug: Force check storage
+  Future<void> _forceCheck() async {
+    await _checkDeviceRegistration();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ Checked storage! Check console.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // 🔍 Debug: Force link device
+  Future<void> _forceLinkDevice() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+
+      if (session != null && session['username'] != null) {
+        final username = session['username'];
+
+        await storage.saveDeviceId(username, 14);
+        await storage.markDeviceActive(username);
+
+        print('✅ Device linked for user: $username');
+
+        await _checkDeviceRegistration();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Device linked!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error linking device: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -69,7 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
+        // ✅ FIX: Wrap in SingleChildScrollView
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,19 +174,26 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _isDeviceRegistered
-                  ? 'Your device is registered and active'
-                  : 'Manage your device registration and security',
+              _isLoading
+                  ? 'Loading device status...'
+                  : _isDeviceActivated
+                  ? '✅ Device is active and ready to use'
+                  : _isDeviceRegistered
+                  ? '⚠️ Device registered but not activated'
+                  : 'Register your device to get started',
               style: TextStyle(
                 fontSize: 14,
-                color: _isDeviceRegistered
+                color: _isDeviceActivated
                     ? Colors.green.shade700
+                    : _isDeviceRegistered
+                    ? Colors.orange.shade700
                     : Colors.grey.shade600,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
-            // Register Device Card - HIDDEN if device is already registered
+            // REGISTER DEVICE BUTTON - Only show if NOT registered
+            // ✅ FIX: Use the correct condition
             if (!_isLoading && !_isDeviceRegistered) ...[
               _buildMenuItem(
                 context,
@@ -112,27 +208,33 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
             ],
 
-            // Device Status Card - SHOWN if device is registered
+            // SHOW REGISTRATION STATUS IF REGISTERED
             if (!_isLoading && _isDeviceRegistered) ...[
               _buildDeviceStatusCard(),
               const SizedBox(height: 16),
             ],
 
-            // Generate Token Card - Always visible
+            // GENERATE TOKEN BUTTON
             _buildMenuItem(
               context,
               icon: Icons.security,
               title: 'Generate Token',
-              subtitle: 'Generate soft token for authentication',
-              color: Colors.green.shade700,
-              onTap: () {
-                context.push(AppRouter.token);
-              },
+              subtitle: _isDeviceActivated
+                  ? 'Generate soft token for authentication'
+                  : 'Activate your device first to generate tokens',
+              color: _isDeviceActivated
+                  ? Colors.green.shade700
+                  : Colors.grey.shade400,
+              onTap: _isDeviceActivated
+                  ? () {
+                      context.push(AppRouter.token);
+                    }
+                  : null,
             ),
 
             const SizedBox(height: 16),
 
-            // My Profile Card
+            // MY PROFILE BUTTON
             _buildMenuItem(
               context,
               icon: Icons.person_outline,
@@ -145,6 +247,110 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             const SizedBox(height: 16),
+
+            // ACTIVATE DEVICE BUTTON
+            if (!_isLoading && _isDeviceRegistered && !_isDeviceActivated) ...[
+              _buildMenuItem(
+                context,
+                icon: Icons.verified,
+                title: 'Activate Device',
+                subtitle: 'Enter activation code to activate your device',
+                color: Colors.orange.shade700,
+                onTap: () {
+                  context.push(AppRouter.activation);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Debug Info - Make it smaller
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '🔍 Debug Info:',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _debugInfo,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Debug Buttons
+            const Text(
+              '🔧 Debug Tools',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _forceCheck,
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Refresh'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade100,
+                      foregroundColor: Colors.blue.shade900,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      textStyle: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _forceLinkDevice,
+                    icon: const Icon(Icons.link, size: 16),
+                    label: const Text('Link Device'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade100,
+                      foregroundColor: Colors.green.shade900,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      textStyle: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                '💡 Check console for detailed debug output',
+                style: TextStyle(fontSize: 10, color: Colors.grey),
+              ),
+            ),
           ],
         ),
       ),
@@ -157,7 +363,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
     required Color color,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
   }) {
     return Card(
       elevation: 2,
@@ -166,46 +372,52 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: color, size: 28),
+                child: Icon(icon, color: color, size: 24),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A1A),
+                        color: onTap == null
+                            ? Colors.grey.shade400
+                            : Color(0xFF1A1A1A),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                        color: onTap == null
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade600,
                       ),
                     ),
                   ],
                 ),
               ),
               Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey.shade400,
-                size: 16,
+                onTap == null ? Icons.lock_outline : Icons.arrow_forward_ios,
+                color: onTap == null
+                    ? Colors.grey.shade300
+                    : Colors.grey.shade400,
+                size: 14,
               ),
             ],
           ),
@@ -215,49 +427,61 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDeviceStatusCard() {
+    final isActive = _isDeviceActivated;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.green.shade50,
+          color: isActive ? Colors.green.shade50 : Colors.orange.shade50,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.green.shade200),
+          border: Border.all(
+            color: isActive ? Colors.green.shade200 : Colors.orange.shade200,
+          ),
         ),
         child: Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: Colors.green.shade100,
+                color: isActive
+                    ? Colors.green.shade100
+                    : Colors.orange.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Icons.check_circle,
-                color: Colors.green,
-                size: 28,
+              child: Icon(
+                isActive ? Icons.check_circle : Icons.pending,
+                color: isActive ? Colors.green : Colors.orange,
+                size: 24,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Device Registered',
+                  Text(
+                    isActive ? 'Device Active' : 'Device Pending',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.green,
+                      color: isActive ? Colors.green : Colors.orange,
                     ),
                   ),
                   Text(
-                    'Your device is active and ready to use',
+                    isActive
+                        ? 'Your device is activated and ready to use'
+                        : _deviceStatus == 'PENDING'
+                        ? 'Click "Activate Device" to complete activation'
+                        : 'Device status: $_deviceStatus',
                     style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.green.shade700,
+                      fontSize: 12,
+                      color: isActive
+                          ? Colors.green.shade700
+                          : Colors.orange.shade700,
                     ),
                   ),
                 ],

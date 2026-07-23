@@ -8,6 +8,7 @@ import 'package:payroll_soft_token_app/features/device/presentation/screens/devi
 import 'package:payroll_soft_token_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_success_screen.dart';
+import 'package:payroll_soft_token_app/features/home/presentation/screens/home_screen.dart';
 
 class AppRouter {
   static const String login = '/login';
@@ -22,6 +23,7 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: login,
     redirect: (context, state) {
+      // You can add redirect logic here if needed
       return null;
     },
     routes: [
@@ -38,7 +40,7 @@ class AppRouter {
       GoRoute(
         path: home,
         name: 'home',
-        builder: (context, state) => const TokenScreen(),
+        builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
         path: token,

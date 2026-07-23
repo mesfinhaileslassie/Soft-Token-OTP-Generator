@@ -50,7 +50,11 @@ class AuthProvider extends ChangeNotifier {
           if (_navigationContext != null && !_isDisposed) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!_isDisposed && _navigationContext != null) {
-                GoRouter.of(_navigationContext!).go('/home');
+                try {
+                  GoRouter.of(_navigationContext!).go('/home');
+                } catch (e) {
+                  print('❌ Navigation error: $e');
+                }
               }
             });
           }

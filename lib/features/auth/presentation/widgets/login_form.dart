@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/utils/validators.dart';
+import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/remember_me_checkbox.dart';
 import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dart';
 
@@ -21,6 +22,42 @@ class _LoginFormState extends State<LoginForm> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
+  bool _isDeviceRegistered = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDeviceStatus();
+  }
+
+  Future<void> _checkDeviceStatus() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+
+      if (session != null && session['username'] != null) {
+        final username = session['username'];
+        final deviceId = await storage.getDeviceId(username);
+        final status = await storage.getDeviceStatus(username);
+        final isTrusted = await storage.isDeviceTrusted(username);
+
+        setState(() {
+          _isDeviceRegistered =
+              deviceId != null && status == 'ACTIVE' && isTrusted;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -245,32 +282,35 @@ class _LoginFormState extends State<LoginForm> {
 
           const SizedBox(height: 12),
 
-          // Register Device Button
-          OutlinedButton(
-            onPressed: () {
-              context.push(AppRouter.deviceRegistration);
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.primaryColor,
-              side: BorderSide(color: AppTheme.primaryColor),
-              minimumSize: const Size(double.infinity, 44),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          // ✅ REGISTER DEVICE BUTTON - Only show if device is NOT registered
+          // The button is completely removed when device is registered
+          if (!_isLoading && !_isDeviceRegistered) ...[
+            OutlinedButton(
+              onPressed: () {
+                context.push(AppRouter.deviceRegistration);
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+                side: BorderSide(color: AppTheme.primaryColor),
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              textStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.devices, size: 18),
+                  const SizedBox(width: 8),
+                  const Text('Register Device'),
+                ],
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.devices, size: 18),
-                const SizedBox(width: 8),
-                const Text('Register Device'),
-              ],
-            ),
-          ),
+          ],
         ],
       ),
     );
@@ -281,7 +321,6 @@ class _LoginFormState extends State<LoginForm> {
       FocusScope.of(context).unfocus();
 
       final authProvider = context.read<AuthProvider>();
-      // Clear previous error
       authProvider.clearError();
 
       authProvider.login(

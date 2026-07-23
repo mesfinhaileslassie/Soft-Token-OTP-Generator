@@ -14,7 +14,7 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ FIX: Set navigation context for AuthProvider
+    // Set navigation context for AuthProvider
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.setNavigationContext(context);
 
@@ -34,8 +34,7 @@ class LoginScreen extends StatelessWidget {
             ],
           ),
 
-          // Foreground scrollable content, laid on top of the split
-          // background so the shield badge can overlap both halves.
+          // Foreground scrollable content
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 32),
