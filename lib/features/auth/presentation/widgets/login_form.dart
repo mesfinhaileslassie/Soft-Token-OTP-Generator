@@ -66,6 +66,62 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
+  // Reusable label shown above each field, matching the Figma layout
+  // (labels sit above the input rather than floating inside it).
+  Widget _fieldLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, left: 2),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF333333),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration({
+    required String hintText,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      prefixIcon: Icon(prefixIcon, color: const Color(0xFF1A1A1A), size: 20),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade300, width: 1.4),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade300, width: 1.4),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1.6),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      hintStyle: TextStyle(
+        color: Colors.grey.shade400,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -74,51 +130,12 @@ class _LoginFormState extends State<LoginForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Username Field
+          _fieldLabel('Username'),
           TextFormField(
             controller: _usernameController,
-            decoration: InputDecoration(
-              labelText: 'Username',
-              hintText: 'Enter your username',
-              prefixIcon: const Icon(
-                Icons.person_outline,
-                color: Color(0xFF9E9E9E),
-                size: 22,
-              ),
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(
-                  color: AppTheme.primaryColor,
-                  width: 2,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.red, width: 2),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
-              labelStyle: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              hintStyle: TextStyle(
-                color: Colors.grey.shade400,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
+            decoration: _fieldDecoration(
+              hintText: 'enter your username',
+              prefixIcon: Icons.person_outline,
             ),
             validator: Validators.validateUsername,
             textInputAction: TextInputAction.next,
@@ -126,27 +143,23 @@ class _LoginFormState extends State<LoginForm> {
             autocorrect: false,
             style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
 
           // Password Field
+          _fieldLabel('Password'),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
-            decoration: InputDecoration(
-              labelText: 'Password',
+            decoration: _fieldDecoration(
               hintText: 'Enter password',
-              prefixIcon: const Icon(
-                Icons.lock_outline,
-                color: Color(0xFF9E9E9E),
-                size: 22,
-              ),
+              prefixIcon: Icons.lock_outline,
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                   color: Colors.grey.shade500,
-                  size: 22,
+                  size: 20,
                 ),
                 onPressed: () {
                   setState(() {
@@ -154,48 +167,13 @@ class _LoginFormState extends State<LoginForm> {
                   });
                 },
               ),
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(
-                  color: AppTheme.primaryColor,
-                  width: 2,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.red, width: 2),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
-              labelStyle: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              hintStyle: TextStyle(
-                color: Colors.grey.shade400,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
             ),
             validator: Validators.validatePassword,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _handleLogin(),
             style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
           // Remember Me Checkbox
           RememberMeCheckbox(
@@ -206,7 +184,7 @@ class _LoginFormState extends State<LoginForm> {
               });
             },
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 22),
 
           // Error Message
           Consumer<AuthProvider>(
@@ -218,7 +196,7 @@ class _LoginFormState extends State<LoginForm> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Colors.red.shade200),
                     ),
                     child: Row(
@@ -255,15 +233,15 @@ class _LoginFormState extends State<LoginForm> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
+                  minimumSize: const Size(double.infinity, 54),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   elevation: 0,
                   textStyle: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
                   ),
                 ),
                 child: authProvider.isLoading
@@ -280,10 +258,11 @@ class _LoginFormState extends State<LoginForm> {
             },
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // ✅ REGISTER DEVICE BUTTON - Only show if device is NOT registered
-          // The button is completely removed when device is registered
+          // Register Device Button - only shown if device is NOT registered.
+          // Not present in the Figma reference state, but functionality is
+          // preserved and styled consistently with the rest of the form.
           if (!_isLoading && !_isDeviceRegistered) ...[
             OutlinedButton(
               onPressed: () {
@@ -291,14 +270,17 @@ class _LoginFormState extends State<LoginForm> {
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.primaryColor,
-                side: BorderSide(color: AppTheme.primaryColor),
-                minimumSize: const Size(double.infinity, 44),
+                side: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 1.4,
+                ),
+                minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 textStyle: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               child: Row(

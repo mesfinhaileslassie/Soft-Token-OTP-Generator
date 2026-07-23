@@ -36,25 +36,34 @@ class LoginScreen extends StatelessWidget {
 
           // Foreground scrollable content
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 32),
-              child: Column(
-                children: [
-                  const SizedBox(height: 46),
-                  const LoginHeader(),
-                  const SizedBox(height: 28),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Column(
                       children: [
-                        const LoginForm(),
-                        const SizedBox(height: 28),
-                        const LoginFooter(),
+                        const SizedBox(height: 40),
+                        const LoginHeader(),
+                        const SizedBox(height: 32),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            children: [
+                              const LoginForm(),
+                              const SizedBox(height: 28),
+                              const LoginFooter(),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
