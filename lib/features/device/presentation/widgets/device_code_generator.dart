@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:android_id/android_id.dart';
 import 'package:uuid/uuid.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
@@ -31,15 +32,28 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
 
+      // Get the real Android ID using android_id package
+      String androidId = androidInfo.id; // fallback
+      try {
+        final androidIdPlugin = const AndroidId();
+        final id = await androidIdPlugin.getId();
+        if (id != null) {
+          androidId = id;
+        }
+      } catch (e) {
+        // Fallback to device_info_plus if android_id fails
+        androidId = androidInfo.id;
+      }
+
       // Step 3: Generate Installation ID, Public Key, Private Key
       final installationId = const Uuid().v4();
       final publicKey = _generatePublicKey();
       final privateKey = _generatePrivateKey();
       final serialNumber = androidInfo.serialNumber ?? 'Unknown';
 
-      // Step 4: Create Device Code
+      // Step 4: Create Device Code with real Android ID
       final deviceCodeData = {
-        'android_id': androidInfo.id,
+        'android_id': androidId,
         'device_model': androidInfo.model,
         'serial_number': serialNumber,
         'installation_id': installationId,
@@ -115,7 +129,10 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
       setState(() {
         _isCopied = true;
       });
-      _showSnackBar('Device code copied!', Colors.green);
+      _showSnackBar(
+        'Device code copied! Paste it in Payroll System.',
+        Colors.green,
+      );
     }
   }
 
@@ -124,6 +141,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ========== GENERATE DEVICE CODE SECTION ==========
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -186,6 +204,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         ),
         const SizedBox(height: 20),
 
+        // ========== DEVICE CODE DISPLAY SECTION ==========
         if (_deviceCode.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(20),
@@ -305,7 +324,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Step 5-8: Copy this code and paste it in the Payroll System to register your device.',
+                          'Step 1: Copy this code and paste it in the Payroll System to register your device.',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.blue.shade700,

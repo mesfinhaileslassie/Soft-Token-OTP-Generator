@@ -1,6 +1,7 @@
 // lib/features/device/presentation/widgets/device_info_card.dart
 import 'package:flutter/material.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:android_id/android_id.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 
 class DeviceInfoCard extends StatefulWidget {
@@ -25,9 +26,22 @@ class _DeviceInfoCardState extends State<DeviceInfoCard> {
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
 
+      // Get the real Android ID using android_id package
+      String androidId = 'Unable to fetch';
+      try {
+        final androidIdPlugin = const AndroidId();
+        final id = await androidIdPlugin.getId();
+        if (id != null) {
+          androidId = id;
+        }
+      } catch (e) {
+        // Fallback to device_info_plus if android_id fails
+        androidId = androidInfo.id;
+      }
+
       setState(() {
         _deviceInfo = {
-          'Device ID': androidInfo.id,
+          'Device ID': androidId,
           'Brand': androidInfo.brand,
           'Manufacturer': androidInfo.manufacturer,
           'Model': androidInfo.model,
@@ -73,7 +87,6 @@ class _DeviceInfoCardState extends State<DeviceInfoCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with #9E0000
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -93,7 +106,6 @@ class _DeviceInfoCardState extends State<DeviceInfoCard> {
               ),
             ),
           ),
-          // Device Info List
           Padding(
             padding: const EdgeInsets.all(16),
             child: _isLoading

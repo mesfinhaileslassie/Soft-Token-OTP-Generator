@@ -3,9 +3,46 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
+import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isDeviceRegistered = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDeviceRegistration();
+  }
+
+  Future<void> _checkDeviceRegistration() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+      if (session != null && session['username'] != null) {
+        final deviceId = await storage.getDeviceId(session['username']);
+        setState(() {
+          _isDeviceRegistered = deviceId != null;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,26 +85,40 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Manage your device registration and security',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              _isDeviceRegistered
+                  ? 'Your device is registered and active'
+                  : 'Manage your device registration and security',
+              style: TextStyle(
+                fontSize: 14,
+                color: _isDeviceRegistered
+                    ? Colors.green.shade700
+                    : Colors.grey.shade600,
+              ),
             ),
             const SizedBox(height: 32),
 
-            // Register Device Card
-            _buildMenuItem(
-              context,
-              icon: Icons.devices,
-              title: 'Register Device',
-              subtitle: 'Register your device with Payroll System',
-              color: AppTheme.primaryColor,
-              onTap: () {
-                context.push(AppRouter.deviceRegistration);
-              },
-            ),
+            // Register Device Card - HIDDEN if device is already registered
+            if (!_isLoading && !_isDeviceRegistered) ...[
+              _buildMenuItem(
+                context,
+                icon: Icons.devices,
+                title: 'Register Device',
+                subtitle: 'Register your device with Payroll System',
+                color: AppTheme.primaryColor,
+                onTap: () {
+                  context.push(AppRouter.deviceRegistration);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
 
-            const SizedBox(height: 16),
+            // Device Status Card - SHOWN if device is registered
+            if (!_isLoading && _isDeviceRegistered) ...[
+              _buildDeviceStatusCard(),
+              const SizedBox(height: 16),
+            ],
 
-            // Generate Token Card
+            // Generate Token Card - Always visible
             _buildMenuItem(
               context,
               icon: Icons.security,
@@ -94,23 +145,6 @@ class HomeScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 16),
-
-            // Settings Card
-            _buildMenuItem(
-              context,
-              icon: Icons.settings_outlined,
-              title: 'Settings',
-              subtitle: 'App settings and preferences',
-              color: Colors.orange.shade700,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Settings coming soon!'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ),
@@ -135,7 +169,6 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Icon Container
               Container(
                 width: 50,
                 height: 50,
@@ -146,7 +179,6 @@ class HomeScreen extends StatelessWidget {
                 child: Icon(icon, color: color, size: 28),
               ),
               const SizedBox(width: 16),
-              // Title and Subtitle
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +202,6 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              // Arrow Icon
               Icon(
                 Icons.arrow_forward_ios,
                 color: Colors.grey.shade400,
@@ -178,6 +209,61 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeviceStatusCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.green.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.green.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Device Registered',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
+                  ),
+                  Text(
+                    'Your device is active and ready to use',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -206,7 +292,6 @@ class HomeScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                // Navigate to login screen
                 context.go(AppRouter.login);
               },
               style: ElevatedButton.styleFrom(

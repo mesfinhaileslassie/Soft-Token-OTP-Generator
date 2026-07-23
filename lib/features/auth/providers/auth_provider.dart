@@ -10,6 +10,7 @@ class AuthProvider extends ChangeNotifier {
   String? _username;
   String? _errorMessage;
   BuildContext? _navigationContext;
+  bool _isDisposed = false;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
@@ -24,24 +25,36 @@ class AuthProvider extends ChangeNotifier {
     _navigationContext = context;
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _navigationContext = null;
+    super.dispose();
+  }
+
   Future<void> _checkAuthStatus() async {
     try {
       final storage = await StorageService.getInstance();
       final session = await storage.getSession();
       if (session != null && session['username'] != null) {
-        // Verify the user still exists
         final user = await storage.getUser(session['username']);
         if (user != null) {
           _isAuthenticated = true;
           _username = session['username'];
           notifyListeners();
 
-          // Navigate to home if already logged in
-          if (_navigationContext != null) {
-            GoRouter.of(_navigationContext!).go('/home');
+          // Check if device is already registered
+          final deviceId = await storage.getDeviceId(session['username']);
+          final isRegistered = deviceId != null;
+
+          if (_navigationContext != null && !_isDisposed) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!_isDisposed && _navigationContext != null) {
+                GoRouter.of(_navigationContext!).go('/home');
+              }
+            });
           }
         } else {
-          // User no longer exists, clear session
           await storage.clearSession();
         }
       }
@@ -60,7 +73,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Validate inputs
       if (username.isEmpty || password.isEmpty) {
         _errorMessage = 'Please enter username and password';
         _isLoading = false;
@@ -69,11 +81,8 @@ class AuthProvider extends ChangeNotifier {
       }
 
       final storage = await StorageService.getInstance();
-
-      // Get user from storage
       final user = await storage.getUser(username);
 
-      // Check if user exists
       if (user == null) {
         _errorMessage = 'User not found. Please register first.';
         _isLoading = false;
@@ -81,7 +90,6 @@ class AuthProvider extends ChangeNotifier {
         return;
       }
 
-      // Check password
       if (user['password'] != password) {
         _errorMessage = 'Invalid password. Please try again.';
         _isLoading = false;
@@ -89,7 +97,6 @@ class AuthProvider extends ChangeNotifier {
         return;
       }
 
-      // Save session
       final token = 'session_${DateTime.now().millisecondsSinceEpoch}';
       await storage.saveSession(username, token);
 
@@ -103,9 +110,12 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
 
-      // Navigate to home
-      if (_navigationContext != null) {
-        GoRouter.of(_navigationContext!).go('/home');
+      if (_navigationContext != null && !_isDisposed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_isDisposed && _navigationContext != null) {
+            GoRouter.of(_navigationContext!).go('/home');
+          }
+        });
       }
     } catch (e) {
       _errorMessage = 'An error occurred during login: ${e.toString()}';
@@ -126,9 +136,12 @@ class AuthProvider extends ChangeNotifier {
       _username = null;
       notifyListeners();
 
-      // Navigate to login
-      if (_navigationContext != null) {
-        GoRouter.of(_navigationContext!).go('/login');
+      if (_navigationContext != null && !_isDisposed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_isDisposed && _navigationContext != null) {
+            GoRouter.of(_navigationContext!).go('/login');
+          }
+        });
       }
     } catch (e) {
       // Handle error silently
@@ -138,5 +151,20 @@ class AuthProvider extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  // Check if device is registered
+  Future<bool> isDeviceRegistered() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final session = await storage.getSession();
+      if (session != null && session['username'] != null) {
+        final deviceId = await storage.getDeviceId(session['username']);
+        return deviceId != null;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 }
