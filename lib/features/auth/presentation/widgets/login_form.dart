@@ -6,8 +6,9 @@ import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/utils/validators.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
-import 'package:payroll_soft_token_app/features/auth/presentation/widgets/remember_me_checkbox.dart';
+import 'package:payroll_soft_token_app/core/services/api_service.dart';
 import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dart';
+import 'package:payroll_soft_token_app/features/auth/presentation/widgets/remember_me_checkbox.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -22,42 +23,7 @@ class _LoginFormState extends State<LoginForm> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
-  bool _isDeviceRegistered = false;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkDeviceStatus();
-  }
-
-  Future<void> _checkDeviceStatus() async {
-    try {
-      final storage = await StorageService.getInstance();
-      final session = await storage.getSession();
-
-      if (session != null && session['username'] != null) {
-        final username = session['username'];
-        final deviceId = await storage.getDeviceId(username);
-        final status = await storage.getDeviceStatus(username);
-        final isTrusted = await storage.isDeviceTrusted(username);
-
-        setState(() {
-          _isDeviceRegistered =
-              deviceId != null && status == 'ACTIVE' && isTrusted;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -66,8 +32,6 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-  // Reusable label shown above each field, matching the Figma layout
-  // (labels sit above the input rather than floating inside it).
   Widget _fieldLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 2),
@@ -122,6 +86,69 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 
+  Future<void> _handleLogin() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      FocusScope.of(context).unfocus();
+      setState(() => _isLoading = true);
+
+      try {
+        final apiService = ApiService();
+        final result = await apiService.loginUser(
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
+        );
+
+        if (result['success']) {
+          final data = result['data'];
+          final storage = await StorageService.getInstance();
+          final username = _usernameController.text.trim();
+
+          // Save session with token from backend (if any)
+          await storage.saveSession(username, data['token'] ?? '');
+
+          // ============================================================
+          // NEW: Associate globally activated device with this user
+          // ============================================================
+          final isActiveGlobal = await storage.isDeviceActiveGlobal();
+          if (isActiveGlobal) {
+            final globalCreds = await storage.getDeviceCredentialsGlobal();
+            if (globalCreds != null) {
+              // Copy global device credentials to user-specific storage
+              await storage.saveDeviceCredentials(
+                username,
+                globalCreds['deviceToken']!,
+                globalCreds['secretKey']!,
+              );
+              await storage.markDeviceActive(username);
+              print('✅ Global device linked to user: $username');
+            }
+          }
+
+          // Navigate to token screen
+          if (mounted) {
+            context.go(AppRouter.token);
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Login failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -161,11 +188,7 @@ class _LoginFormState extends State<LoginForm> {
                   color: Colors.grey.shade500,
                   size: 20,
                 ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
               ),
             ),
             validator: Validators.validatePassword,
@@ -178,138 +201,40 @@ class _LoginFormState extends State<LoginForm> {
           // Remember Me Checkbox
           RememberMeCheckbox(
             value: _rememberMe,
-            onChanged: (bool? value) {
-              setState(() {
-                _rememberMe = value ?? false;
-              });
-            },
+            onChanged: (value) => setState(() => _rememberMe = value ?? false),
           ),
           const SizedBox(height: 22),
 
-          // Error Message
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              if (authProvider.errorMessage != null) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Colors.red.shade700,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            authProvider.errorMessage!,
-                            style: TextStyle(
-                              color: Colors.red.shade700,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-
           // Login Button
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              return ElevatedButton(
-                onPressed: authProvider.isLoading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 54),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-                child: authProvider.isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Login'),
-              );
-            },
-          ),
-
-          const SizedBox(height: 14),
-
-          // Register Device Button - only shown if device is NOT registered.
-          // Not present in the Figma reference state, but functionality is
-          // preserved and styled consistently with the rest of the form.
-          if (!_isLoading && !_isDeviceRegistered) ...[
-            OutlinedButton(
-              onPressed: () {
-                context.push(AppRouter.deviceRegistration);
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-                side: const BorderSide(
-                  color: AppTheme.primaryColor,
-                  width: 1.4,
-                ),
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _handleLogin,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 54),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.devices, size: 18),
-                  const SizedBox(width: 8),
-                  const Text('Register Device'),
-                ],
+              elevation: 0,
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
               ),
             ),
-          ],
+            child: _isLoading
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Login'),
+          ),
         ],
       ),
     );
-  }
-
-  void _handleLogin() {
-    if (_formKey.currentState?.validate() ?? false) {
-      FocusScope.of(context).unfocus();
-
-      final authProvider = context.read<AuthProvider>();
-      authProvider.clearError();
-
-      authProvider.login(
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
-        rememberMe: _rememberMe,
-      );
-    }
   }
 }
