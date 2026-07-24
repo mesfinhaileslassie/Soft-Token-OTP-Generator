@@ -17,6 +17,59 @@ class StorageService {
     return _instance;
   }
 
+  // ==================== GLOBAL DEVICE KEYS (NOT USER-SPECIFIC) ====================
+
+  Future<void> saveTemporaryKeysGlobal(
+    String installationId,
+    String publicKey,
+    String privateKey,
+  ) async {
+    await _preferences!.setString('temp_installation_id', installationId);
+    await _preferences!.setString('temp_public_key', publicKey);
+    await _preferences!.setString('temp_private_key', privateKey);
+  }
+
+  Future<Map<String, String>?> getTemporaryKeysGlobal() async {
+    final installationId = _preferences!.getString('temp_installation_id');
+    final publicKey = _preferences!.getString('temp_public_key');
+    final privateKey = _preferences!.getString('temp_private_key');
+    if (installationId != null && publicKey != null && privateKey != null) {
+      return {
+        'installationId': installationId,
+        'publicKey': publicKey,
+        'privateKey': privateKey,
+      };
+    }
+    return null;
+  }
+
+  Future<void> saveDeviceCredentialsGlobal(
+    String deviceToken,
+    String secretKey,
+  ) async {
+    await _preferences!.setString('device_token_global', deviceToken);
+    await _preferences!.setString('secret_key_global', secretKey);
+  }
+
+  Future<Map<String, String>?> getDeviceCredentialsGlobal() async {
+    final token = _preferences!.getString('device_token_global');
+    final key = _preferences!.getString('secret_key_global');
+    if (token != null && key != null) {
+      return {'deviceToken': token, 'secretKey': key};
+    }
+    return null;
+  }
+
+  Future<void> markDeviceActiveGlobal() async {
+    await _preferences!.setBool('device_active_global', true);
+  }
+
+  Future<bool> isDeviceActiveGlobal() async {
+    return _preferences!.getBool('device_active_global') ?? false;
+  }
+
+  // ==================== USER-SPECIFIC METHODS ====================
+
   // Get all users
   Future<Map<String, dynamic>> getUsers() async {
     final usersJson = _preferences!.getString('users');
@@ -83,7 +136,7 @@ class StorageService {
     await _preferences!.remove('current_session');
   }
 
-  // Device Management
+  // Device Management (user-specific)
   Future<void> saveDeviceId(String username, int deviceId) async {
     final user = await getUser(username);
     if (user != null) {
@@ -104,7 +157,7 @@ class StorageService {
     await _preferences!.setString('device_code_$username', deviceCode);
   }
 
-  // Temporary Keys (before activation)
+  // Temporary Keys (before activation) - user-specific
   Future<void> saveTemporaryKeys(
     String username,
     String installationId,
@@ -132,7 +185,7 @@ class StorageService {
     return null;
   }
 
-  // Activation Management
+  // Activation Management (user-specific)
   Future<void> setActivationPending(
     String username,
     String activationCode,
@@ -162,7 +215,7 @@ class StorageService {
     }
   }
 
-  // Device Credentials (after activation)
+  // Device Credentials (after activation) - user-specific
   Future<void> saveDeviceCredentials(
     String username,
     String deviceToken,
@@ -187,7 +240,7 @@ class StorageService {
     return null;
   }
 
-  // Device Status
+  // Device Status (user-specific)
   Future<void> markDeviceActive(String username) async {
     final user = await getUser(username);
     if (user != null) {
@@ -213,7 +266,7 @@ class StorageService {
     return false;
   }
 
-  // Permanent Key Storage (after activation)
+  // Permanent Key Storage (user-specific)
   Future<void> savePrivateKey(String username, String privateKey) async {
     final user = await getUser(username);
     if (user != null) {

@@ -35,27 +35,42 @@ class TokenProvider extends ChangeNotifier {
 
     try {
       final storage = await StorageService.getInstance();
-      final session = await storage.getSession();
 
-      if (session == null || session['username'] == null) {
-        setState(() {
-          _isChecking = false;
-          _canGenerate = false;
-          _errorMessage = 'Please login first';
-        });
-        return;
+      // First check if device is active globally
+      final isActiveGlobal = await storage.isDeviceActiveGlobal();
+      if (isActiveGlobal) {
+        final creds = await storage.getDeviceCredentialsGlobal();
+        if (creds != null && creds['secretKey'] != null) {
+          setState(() {
+            _isChecking = false;
+            _canGenerate = true;
+            _errorMessage = '';
+          });
+          return;
+        }
       }
 
-      final username = session['username'];
-      final isActive = await storage.isDeviceTrusted(username);
-      final status = await storage.getDeviceStatus(username);
+      // Fallback to user-specific (if logged in)
+      final session = await storage.getSession();
+      if (session != null && session['username'] != null) {
+        final username = session['username'];
+        final isActive = await storage.isDeviceTrusted(username);
+        final status = await storage.getDeviceStatus(username);
+        if (isActive && status == 'ACTIVE') {
+          setState(() {
+            _isChecking = false;
+            _canGenerate = true;
+            _errorMessage = '';
+          });
+          return;
+        }
+      }
 
       setState(() {
         _isChecking = false;
-        _canGenerate = isActive && status == 'ACTIVE';
-        _errorMessage = _canGenerate
-            ? ''
-            : 'Device is not active. Please activate your device first.';
+        _canGenerate = false;
+        _errorMessage =
+            'Device is not active. Please activate your device first.';
       });
     } catch (e) {
       setState(() {
@@ -84,20 +99,26 @@ class TokenProvider extends ChangeNotifier {
 
     try {
       final storage = await StorageService.getInstance();
-      final session = await storage.getSession();
 
-      if (session == null || session['username'] == null) {
-        setState(() {
-          _isGenerating = false;
-          _errorMessage = 'Please login first';
-        });
-        return;
+      // Try to get secret key from global storage first
+      String? secretKey;
+      final globalCreds = await storage.getDeviceCredentialsGlobal();
+      if (globalCreds != null && globalCreds['secretKey'] != null) {
+        secretKey = globalCreds['secretKey'];
+      } else {
+        // Fallback to user-specific
+        final session = await storage.getSession();
+        if (session != null && session['username'] != null) {
+          final userCreds = await storage.getDeviceCredentials(
+            session['username'],
+          );
+          if (userCreds != null && userCreds['secretKey'] != null) {
+            secretKey = userCreds['secretKey'];
+          }
+        }
       }
 
-      final username = session['username'];
-      final credentials = await storage.getDeviceCredentials(username);
-
-      if (credentials == null || credentials['secretKey'] == null) {
+      if (secretKey == null) {
         setState(() {
           _isGenerating = false;
           _errorMessage = 'Secret key not found. Please re-activate device.';
@@ -105,9 +126,7 @@ class TokenProvider extends ChangeNotifier {
         return;
       }
 
-      final secretKey = credentials['secretKey']!;
-
-      // ✅ Use UTC time to match backend
+      // Generate token using secretKey (same algorithm as backend)
       final timeInSeconds =
           DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
       final counter = timeInSeconds ~/ 30;
@@ -116,13 +135,11 @@ class TokenProvider extends ChangeNotifier {
       print('⏰ Flutter UTC Time: ${DateTime.now().toUtc()}');
       print('🔄 Flutter Counter: $counter');
 
-      // ✅ Same algorithm as backend: SHA256(secretKey + counter)
       final combined = '$secretKey:$counter';
       final bytes = utf8.encode(combined);
       final hash = sha256.convert(bytes);
       final hashString = hash.toString();
 
-      // ✅ Extract 6 digits (same as backend)
       String tokenValue = '';
       for (int i = 0; i < hashString.length && tokenValue.length < 6; i++) {
         if (hashString[i].contains(RegExp(r'[0-9]'))) {
@@ -144,7 +161,6 @@ class TokenProvider extends ChangeNotifier {
         _errorMessage = '';
       });
       notifyListeners();
-
       _startTimer();
     } catch (e) {
       setState(() {

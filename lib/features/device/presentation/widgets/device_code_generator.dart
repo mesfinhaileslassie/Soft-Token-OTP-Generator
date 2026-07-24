@@ -7,6 +7,7 @@ import 'package:android_id/android_id.dart';
 import 'package:uuid/uuid.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DeviceCodeGenerator extends StatefulWidget {
   const DeviceCodeGenerator({super.key});
@@ -20,9 +21,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
   bool _isGenerating = false;
   bool _isCopied = false;
 
-  // Figma-matching palette for the "Your Device Code" panel. Kept as a
-  // named constant (instead of the previous orange accent) purely for
-  // visual styling; no logic depends on this value.
   static const Color codeColor = Color(0xFFB33A2E);
   static const Color _panelBackground = Color(0xFFFCE8BE);
   static const Color _panelBorder = Color(0xFFF0D69B);
@@ -33,30 +31,23 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
     });
 
     try {
-      // Step 2: Automatically collect device info
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
 
-      // Get the real Android ID using android_id package
-      String androidId = androidInfo.id; // fallback
+      String androidId = androidInfo.id;
       try {
         final androidIdPlugin = const AndroidId();
         final id = await androidIdPlugin.getId();
-        if (id != null) {
-          androidId = id;
-        }
+        if (id != null) androidId = id;
       } catch (e) {
-        // Fallback to device_info_plus if android_id fails
         androidId = androidInfo.id;
       }
 
-      // Step 3: Generate Installation ID, Public Key, Private Key
       final installationId = const Uuid().v4();
       final publicKey = _generatePublicKey();
       final privateKey = _generatePrivateKey();
       final serialNumber = androidInfo.serialNumber ?? 'Unknown';
 
-      // Step 4: Create Device Code with real Android ID
       final deviceCodeData = {
         'android_id': androidId,
         'device_model': androidInfo.model,
@@ -78,18 +69,16 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         _isCopied = false;
       });
 
-      // Step 5: Save device code and keys to local storage
+      // ✅ Save keys globally (no login required)
       final storage = await StorageService.getInstance();
-      final session = await storage.getSession();
-      if (session != null && session['username'] != null) {
-        await storage.saveDeviceCode(session['username'], codeString);
-        await storage.saveTemporaryKeys(
-          session['username'],
-          installationId,
-          publicKey,
-          privateKey,
-        );
-      }
+      await storage.saveTemporaryKeysGlobal(
+        installationId,
+        publicKey,
+        privateKey,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('device_code_global', codeString);
 
       _showSnackBar(
         'Device code generated! Copy and paste in Payroll System.',
@@ -131,9 +120,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
   Future<void> _copyToClipboard() async {
     if (_deviceCode.isNotEmpty) {
       await Clipboard.setData(ClipboardData(text: _deviceCode));
-      setState(() {
-        _isCopied = true;
-      });
+      setState(() => _isCopied = true);
       _showSnackBar(
         'Device code copied! Paste it in Payroll System.',
         Colors.green,
@@ -146,7 +133,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ========== GENERATE DEVICE CODE BUTTON ==========
         ElevatedButton(
           onPressed: _isGenerating ? null : _generateDeviceCode,
           style: ElevatedButton.styleFrom(
@@ -174,7 +160,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
               : const Text('Generate Device Code'),
         ),
 
-        // ========== DEVICE CODE DISPLAY SECTION ==========
         if (_deviceCode.isNotEmpty) ...[
           const SizedBox(height: 20),
           Container(
@@ -233,8 +218,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'copy the device code and paste it in the Payroll '
-                  'system to register this device',
+                  'copy the device code and paste it in the Payroll system to register this device',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade700,
@@ -242,7 +226,6 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                   ),
                 ),
                 const SizedBox(height: 14),
-
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),

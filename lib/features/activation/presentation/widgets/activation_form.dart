@@ -6,6 +6,7 @@ import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 import 'package:payroll_soft_token_app/core/services/api_service.dart';
 import 'package:payroll_soft_token_app/core/crypto/crypto_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ActivationForm extends StatefulWidget {
   const ActivationForm({super.key});
@@ -33,9 +34,6 @@ class _ActivationFormState extends State<ActivationForm> {
     super.dispose();
   }
 
-  // ============================================================
-  // DEBUG FUNCTION - Prints to terminal
-  // ============================================================
   void _debugPrint(String message) {
     print('╔═══════════════════════════════════════════════════════════');
     print('║ DEBUG: $message');
@@ -49,19 +47,12 @@ class _ActivationFormState extends State<ActivationForm> {
     print('╚═══════════════════════════════════════════════════════════');
   }
 
-  // ============================================================
-  // FIXED: Backspace handling
-  // ============================================================
   void _onKeyEvent(int index, String value) {
-    // If the field is cleared (backspace was pressed) and it's not the first field
     if (value.isEmpty && index > 0) {
-      // Check if the previous field is empty, then move focus to previous
       if (_controllers[index - 1].text.isEmpty) {
         _focusNodes[index - 1].requestFocus();
       }
     }
-
-    // If a digit is entered and it's not the last field, move to next
     if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
     }
@@ -94,36 +85,17 @@ class _ActivationFormState extends State<ActivationForm> {
     });
 
     try {
-      _debugPrint('📱 Step 1: Getting session...');
       final storage = await StorageService.getInstance();
-      final session = await storage.getSession();
-
-      _debugPrintData('Session Data', session);
-
-      if (session == null || session['username'] == null) {
-        _debugPrint('❌ ERROR: No session found. User not logged in.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please login first'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      final username = session['username'];
-      _debugPrintData('Username', username);
-
       final apiService = ApiService();
-      _debugPrint('📱 Step 2: Getting Device ID from Payroll System...');
+
+      // ============================================================
+      // REMOVED LOGIN CHECK – Activation works without logging in
+      // ============================================================
+
+      _debugPrint('📱 Step 1: Getting Device ID from Payroll System...');
       _debugPrintData('Activation Code being sent', code);
 
-      // Step 14-15: Get Device ID from Payroll System using Activation Code
       final deviceResult = await apiService.getDeviceIdByActivationCode(code);
-
       _debugPrintData('Device Result', deviceResult);
 
       if (!deviceResult['success']) {
@@ -147,20 +119,10 @@ class _ActivationFormState extends State<ActivationForm> {
       final deviceId = deviceResult['data']['deviceId'];
       _debugPrintData('✅ Device ID found', deviceId);
 
-      // Save Device ID to local storage
-      await storage.saveDeviceId(username, deviceId);
-      _debugPrint('✅ Device ID saved to local storage');
-
-      // Step 15: Store activation code temporarily and mark as pending
-      await storage.setActivationPending(username, code);
-      _debugPrint('✅ Activation pending set in storage');
-
-      // Step 16: Get challenge from Payroll System
-      _debugPrint('📱 Step 3: Getting challenge from Payroll System...');
+      _debugPrint('📱 Step 2: Getting challenge from Payroll System...');
       _debugPrintData('Device ID for challenge', deviceId);
 
       final challengeResult = await apiService.getChallenge(deviceId: deviceId);
-
       _debugPrintData('Challenge Result', challengeResult);
 
       if (!challengeResult['success']) {
@@ -186,13 +148,13 @@ class _ActivationFormState extends State<ActivationForm> {
       final challenge = challengeResult['data']['challenge'];
       _debugPrintData('✅ Challenge received', challenge);
 
-      // Step 17: Get private key from storage
-      _debugPrint('📱 Step 4: Getting private key from storage...');
-      final tempKeys = await storage.getTemporaryKeys(username);
-      _debugPrintData('Temporary Keys', tempKeys);
+      // Get private key from GLOBAL storage
+      _debugPrint('📱 Step 3: Getting private key from global storage...');
+      final tempKeys = await storage.getTemporaryKeysGlobal();
+      _debugPrintData('Temporary Keys (Global)', tempKeys);
 
       if (tempKeys == null || tempKeys['privateKey'] == null) {
-        _debugPrint('❌ ERROR: Private key not found in storage');
+        _debugPrint('❌ ERROR: Private key not found in global storage');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -209,18 +171,17 @@ class _ActivationFormState extends State<ActivationForm> {
 
       _debugPrint('✅ Private key found');
 
-      // Step 17: Sign challenge using Private Key
-      _debugPrint('📱 Step 5: Signing challenge with private key...');
+      // Sign challenge
+      _debugPrint('📱 Step 4: Signing challenge with private key...');
       final cryptoService = CryptoService();
       final signature = cryptoService.signChallenge(
         challenge,
         tempKeys['privateKey']!,
       );
-
       _debugPrintData('✅ Challenge signed', signature);
 
-      // Step 18-19: Send signature to Payroll System
-      _debugPrint('📱 Step 6: Sending signature to Payroll System...');
+      // Send signature
+      _debugPrint('📱 Step 5: Sending signature to Payroll System...');
       _debugPrintData('Signature', signature);
       _debugPrintData('Device ID', deviceId);
 
@@ -228,7 +189,6 @@ class _ActivationFormState extends State<ActivationForm> {
         deviceId: deviceId,
         signature: signature,
       );
-
       _debugPrintData('Verify Result', verifyResult);
 
       setState(() {
@@ -241,33 +201,23 @@ class _ActivationFormState extends State<ActivationForm> {
         _debugPrintData('Device Token', data['deviceToken']);
         _debugPrintData('Secret Key', data['secretKey']);
 
-        // Step 22: Store Device Token and Secret Key
-        await storage.saveDeviceCredentials(
-          username,
+        // Store credentials globally
+        await storage.saveDeviceCredentialsGlobal(
           data['deviceToken'] ?? '',
           data['secretKey'] ?? '',
         );
-        _debugPrint('✅ Device credentials stored');
-
-        // Step 20: Mark device as active and trusted
-        await storage.markDeviceActive(username);
+        await storage.markDeviceActiveGlobal();
+        _debugPrint('✅ Device credentials stored globally');
         _debugPrint('✅ Device marked as ACTIVE and TRUSTED');
 
-        // Step 22: Store all keys permanently
-        await storage.savePrivateKey(username, tempKeys['privateKey']!);
-        await storage.savePublicKey(username, tempKeys['publicKey']!);
-        await storage.saveInstallationId(username, tempKeys['installationId']!);
-        _debugPrint('✅ All keys stored permanently');
-
-        // Clear activation pending
-        await storage.clearActivationPending(username);
-        _debugPrint('✅ Activation pending cleared');
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('activation_code', code);
+        await prefs.setInt('device_id', deviceId);
 
         _debugPrint(
           '🎉🎉🎉 ACTIVATION COMPLETE! NAVIGATING TO SUCCESS SCREEN 🎉🎉🎉',
         );
 
-        // Navigate to Activation Success
         if (mounted) {
           context.go(AppRouter.activationSuccess);
         }
@@ -305,7 +255,6 @@ class _ActivationFormState extends State<ActivationForm> {
   }
 
   void _onCodeChanged(String value, int index) {
-    // Auto-advance to next field when digit is entered
     if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
     }
@@ -404,22 +353,16 @@ class _ActivationFormState extends State<ActivationForm> {
                       ),
                       onChanged: (value) {
                         setState(() {
-                          // Only allow digits
                           if (value.isNotEmpty &&
                               !RegExp(r'^[0-9]$').hasMatch(value)) {
                             _controllers[index].clear();
                             return;
                           }
-
-                          // Handle backspace: if value is empty (backspace pressed)
-                          // and current field is empty, move to previous field
                           if (value.isEmpty && index > 0) {
-                            // If current field is empty, move focus to previous
                             if (_controllers[index].text.isEmpty) {
                               _focusNodes[index - 1].requestFocus();
                             }
                           }
-
                           _onCodeChanged(value, index);
                         });
                       },
