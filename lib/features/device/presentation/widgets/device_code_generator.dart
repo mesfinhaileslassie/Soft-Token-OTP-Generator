@@ -20,7 +20,12 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
   bool _isGenerating = false;
   bool _isCopied = false;
 
-  static const Color codeColor = Color(0xFFFFA400);
+  // Figma-matching palette for the "Your Device Code" panel. Kept as a
+  // named constant (instead of the previous orange accent) purely for
+  // visual styling; no logic depends on this value.
+  static const Color codeColor = Color(0xFFB33A2E);
+  static const Color _panelBackground = Color(0xFFFCE8BE);
+  static const Color _panelBorder = Color(0xFFF0D69B);
 
   Future<void> _generateDeviceCode() async {
     setState(() {
@@ -141,134 +146,83 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ========== GENERATE DEVICE CODE SECTION ==========
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.shade100,
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+        // ========== GENERATE DEVICE CODE BUTTON ==========
+        ElevatedButton(
+          onPressed: _isGenerating ? null : _generateDeviceCode,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            elevation: 0,
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Generate Device Code',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Click the button below to generate a unique device code',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 20),
-
-              ElevatedButton(
-                onPressed: _isGenerating ? null : _generateDeviceCode,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+          child: _isGenerating
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
                   ),
-                  textStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                child: _isGenerating
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Generate Device Code'),
-              ),
-            ],
-          ),
+                )
+              : const Text('Generate Device Code'),
         ),
-        const SizedBox(height: 20),
 
         // ========== DEVICE CODE DISPLAY SECTION ==========
         if (_deviceCode.isNotEmpty) ...[
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: codeColor.withOpacity(0.08),
+              color: _panelBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: codeColor.withOpacity(0.3)),
-              boxShadow: [
-                BoxShadow(
-                  color: codeColor.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(color: _panelBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 4,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: codeColor,
-                        borderRadius: BorderRadius.circular(2),
+                    Expanded(
+                      child: Text(
+                        'Your Device Code',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: codeColor,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Your Device Code',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: codeColor,
-                      ),
-                    ),
-                    const Spacer(),
                     InkWell(
                       onTap: _copyToClipboard,
-                      child: Container(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: codeColor,
-                          borderRadius: BorderRadius.circular(6),
+                          horizontal: 4,
+                          vertical: 2,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               _isCopied ? Icons.check : Icons.copy,
-                              color: Colors.white,
+                              color: codeColor,
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _isCopied ? 'Copied' : 'Copy',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                              _isCopied ? 'Copied' : 'copy',
+                              style: TextStyle(
+                                color: codeColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -277,62 +231,36 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
+                Text(
+                  'copy the device code and paste it in the Payroll '
+                  'system to register this device',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 14),
 
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: codeColor.withOpacity(0.2)),
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Text(
-                            _deviceCode,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade800,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _deviceCode,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: codeColor,
+                        fontFamily: 'monospace',
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Colors.blue.shade700,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Step 1: Copy this code and paste it in the Payroll System to register your device.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.blue.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
