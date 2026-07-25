@@ -8,11 +8,50 @@ import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dar
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_form.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_header.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/widgets/login_footer.dart';
+import 'package:go_router/go_router.dart';
+import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
-  static const double _bannerHeight = 130;
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool _isDeviceRegistered = false;
+  bool _isLoading = true;
+  String? _installationId;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDeviceRegistration();
+  }
+
+  Future<void> _checkDeviceRegistration() async {
+    setState(() => _isLoading = true);
+    try {
+      final storage = await StorageService.getInstance();
+      final tempKeys = await storage.getTemporaryKeysGlobal();
+      _installationId = tempKeys?['installationId'];
+      if (_installationId == null) {
+        _isDeviceRegistered = false;
+      } else {
+        final apiService = ApiService();
+        final result = await apiService.checkDeviceRegistration(_installationId!);
+        if (result['success'] && result['data']['registered'] == true) {
+          _isDeviceRegistered = true;
+        } else {
+          _isDeviceRegistered = false;
+        }
+      }
+    } catch (e) {
+      _isDeviceRegistered = false;
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,27 +63,25 @@ class LoginScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Background split: red banner on top, white for the rest.
+          // Background split
           Column(
             children: [
               Container(
-                height: _bannerHeight,
+                height: 130,
                 width: double.infinity,
                 color: AppTheme.primaryColor,
               ),
               const Expanded(child: ColoredBox(color: Colors.white)),
             ],
           ),
-          // Foreground scrollable content
+          // Foreground content
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   padding: const EdgeInsets.only(bottom: 32),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Column(
                       children: [
                         const SizedBox(height: 40),
@@ -55,6 +92,29 @@ class LoginScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               const LoginForm(),
+                              const SizedBox(height: 16),
+                              if (!_isLoading && !_isDeviceRegistered)
+                                OutlinedButton(
+                                  onPressed: () {
+                                    // Navigate to device registration
+                                    context.push(AppRouter.deviceRegistration);
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.primaryColor,
+                                    side: const BorderSide(color: AppTheme.primaryColor),
+                                    minimumSize: const Size(double.infinity, 48),
+                                  ),
+                                  child: const Text('Register Device'),
+                                ),
+                              if (_isLoading)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8),
+                                  child: SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
                               const SizedBox(height: 28),
                               const LoginFooter(),
                             ],

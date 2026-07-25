@@ -25,7 +25,6 @@ class ApiService {
 
   // ==================== AUTH ENDPOINTS ====================
 
-  /// Register a new user in the database
   Future<Map<String, dynamic>> registerUser({
     required String username,
     required String email,
@@ -71,7 +70,6 @@ class ApiService {
     }
   }
 
-  /// Login user
   Future<Map<String, dynamic>> loginUser({
     required String username,
     required String password,
@@ -101,9 +99,45 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> changePassword({
+    required int userId,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final url = Uri.parse('$baseUrl/auth/change-password');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data};
+      } else {
+        final data = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Password change failed',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
   // ==================== USER PROFILE ====================
 
-  /// Get user profile by ID
   Future<Map<String, dynamic>> getUserProfile(int userId) async {
     try {
       final baseUrl = await getBaseUrl();
@@ -307,6 +341,34 @@ class ApiService {
         return {'success': true, 'data': data};
       } else {
         return {'success': false, 'message': 'OTP verification failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // ==================== DEVICE REGISTRATION CHECK ====================
+
+  Future<Map<String, dynamic>> checkDeviceRegistration(
+    String installationId,
+  ) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final url = Uri.parse(
+        '$baseUrl/device/check-registration?installationId=$installationId',
+      );
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data};
+      } else {
+        return {'success': false, 'message': 'Failed to check registration'};
       }
     } catch (e) {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};

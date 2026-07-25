@@ -82,6 +82,14 @@ class StorageService {
     await _preferences!.remove('user_id');
   }
 
+  Future<void> saveUsername(String username) async {
+    await _preferences!.setString('user_username', username);
+  }
+
+  Future<String?> getUsername() async {
+    return _preferences!.getString('user_username');
+  }
+
   // ==================== AUTH CREDENTIALS (OFFLINE LOGIN) ====================
 
   Future<void> saveAuthCredentials(
@@ -103,6 +111,18 @@ class StorageService {
       return {'username': username, 'passwordHash': passwordHash, 'role': role};
     }
     return null;
+  }
+
+  Future<void> updateAuthPasswordHash(String newPasswordHash) async {
+    await _preferences!.setString('auth_password_hash', newPasswordHash);
+  }
+
+  Future<void> updateUserPassword(String username, String newPassword) async {
+    final user = await getUser(username);
+    if (user != null) {
+      user['password'] = newPassword;
+      await updateUser(username, user);
+    }
   }
 
   Future<void> clearAuthCredentials() async {
