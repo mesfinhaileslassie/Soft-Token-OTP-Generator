@@ -103,28 +103,29 @@ class _LoginFormState extends State<LoginForm> {
           final storage = await StorageService.getInstance();
           final username = _usernameController.text.trim();
 
-          // Save session with token from backend (if any)
+          // Save session
           await storage.saveSession(username, data['token'] ?? '');
 
-          // ============================================================
-          // NEW: Associate globally activated device with this user
-          // ============================================================
+          // ✅ Save user ID for profile
+          final userId = data['userId'] ?? 0;
+          if (userId > 0) {
+            await storage.saveUserId(userId);
+          }
+
+          // Associate global device (if activated before login)
           final isActiveGlobal = await storage.isDeviceActiveGlobal();
           if (isActiveGlobal) {
             final globalCreds = await storage.getDeviceCredentialsGlobal();
             if (globalCreds != null) {
-              // Copy global device credentials to user-specific storage
               await storage.saveDeviceCredentials(
                 username,
                 globalCreds['deviceToken']!,
                 globalCreds['secretKey']!,
               );
               await storage.markDeviceActive(username);
-              print('✅ Global device linked to user: $username');
             }
           }
 
-          // Navigate to token screen
           if (mounted) {
             context.go(AppRouter.token);
           }
@@ -188,7 +189,8 @@ class _LoginFormState extends State<LoginForm> {
                   color: Colors.grey.shade500,
                   size: 20,
                 ),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
             ),
             validator: Validators.validatePassword,

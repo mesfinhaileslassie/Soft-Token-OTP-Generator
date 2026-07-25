@@ -4,10 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
-import 'package:payroll_soft_token_app/features/profile/presentation/screens/change_password_screen.dart';
+import 'package:payroll_soft_token_app/core/services/api_service.dart';
 
 /// Local palette used only for the profile screen's visual redesign.
-/// Kept here (instead of touching AppTheme) so no other screen is affected.
 class _ProfilePalette {
   static const Color headerPillColor = Color(0xFFB05066);
   static const Color cardBorder = Color(0xFFE8A93D);
@@ -28,6 +27,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -36,23 +36,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final storage = await StorageService.getInstance();
-      final session = await storage.getSession();
-
-      if (session != null && session['username'] != null) {
-        final user = await storage.getUser(session['username']);
+      final userId = await storage.getUserId();
+      if (userId == null || userId == 0) {
         setState(() {
-          _userData = user;
+          _userData = null;
+          _error = 'User not logged in';
           _isLoading = false;
+        });
+        return;
+      }
+      final apiService = ApiService();
+      final result = await apiService.getUserProfile(userId);
+      if (result['success']) {
+        setState(() {
+          _userData = result['data'];
+          _isLoading = false;
+          _error = null;
         });
       } else {
         setState(() {
+          _userData = null;
+          _error = result['message'] ?? 'Failed to load profile';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
+        _userData = null;
+        _error = 'Error: ${e.toString()}';
         _isLoading = false;
       });
     }
@@ -62,16 +79,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // The old AppBar's title/back-button look has been replaced by the
-      // custom maroon header below (built with SafeArea) so it visually
-      // matches the Figma design while still sitting at the top of the
-      // screen exactly as the AppBar used to.
       body: Column(
         children: [
           _buildHeader(context),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _error!,
+                            style: const TextStyle(fontSize: 16),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: _loadUserData,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                 : _userData == null
                 ? const Center(child: Text('No user data found'))
                 : SingleChildScrollView(
@@ -88,16 +128,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-
-                        // Your Account Details
                         _buildAccountDetails(),
                         const SizedBox(height: 20),
-
-                        // Change Password
                         _buildChangePassword(context),
                         const SizedBox(height: 14),
-
-                        // Back to Home Button
                         _buildBackToHomeButton(context),
                       ],
                     ),
@@ -108,9 +142,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Custom maroon header replacing the old AppBar look: avatar + title on
-  /// top, and a "Back to Home" pill alongside "Log out" beneath it — all
-  /// inside the same colored surface, matching the Figma design.
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -247,6 +278,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 18),
           _buildInfoRow(
+            Icons.email_outlined,
+            'Email',
+            _userData?['email'] ?? 'N/A',
+          ),
+          const SizedBox(height: 18),
+          _buildInfoRow(
             Icons.wc_outlined,
             'Gender',
             _userData?['gender'] ?? 'N/A',
@@ -256,6 +293,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.phone_outlined,
             'Phone',
             _userData?['phone'] ?? 'N/A',
+          ),
+          const SizedBox(height: 18),
+          _buildInfoRow(
+            Icons.business_center_outlined,
+            'Position',
+            _userData?['position'] ?? 'N/A',
+          ),
+          const SizedBox(height: 18),
+          _buildInfoRow(
+            Icons.work_outline,
+            'Role',
+            _userData?['role'] ?? 'N/A',
           ),
         ],
       ),
@@ -359,8 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-/// Reusable tan/gold action card used for "Change Password" and
-/// "Back to Home" entries, matching the Figma design.
+/// Reusable tan/gold action card
 class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String title;

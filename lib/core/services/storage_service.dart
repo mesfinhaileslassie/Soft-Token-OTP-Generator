@@ -17,7 +17,7 @@ class StorageService {
     return _instance;
   }
 
-  // ==================== GLOBAL DEVICE KEYS (NOT USER-SPECIFIC) ====================
+  // ==================== GLOBAL DEVICE KEYS ====================
 
   Future<void> saveTemporaryKeysGlobal(
     String installationId,
@@ -68,14 +68,59 @@ class StorageService {
     return _preferences!.getBool('device_active_global') ?? false;
   }
 
+  // ==================== USER PROFILE DATA ====================
+
+  Future<void> saveUserId(int userId) async {
+    await _preferences!.setInt('user_id', userId);
+  }
+
+  Future<int?> getUserId() async {
+    return _preferences!.getInt('user_id');
+  }
+
+  Future<void> clearUserId() async {
+    await _preferences!.remove('user_id');
+  }
+
+  // ==================== AUTH CREDENTIALS (OFFLINE LOGIN) ====================
+
+  Future<void> saveAuthCredentials(
+    String username,
+    String passwordHash,
+    String role,
+  ) async {
+    await _preferences!.setString('auth_username', username);
+    await _preferences!.setString('auth_password_hash', passwordHash);
+    await _preferences!.setString('auth_role', role);
+    await _preferences!.setBool('auth_logged_in', true);
+  }
+
+  Future<Map<String, String>?> getAuthCredentials() async {
+    final username = _preferences!.getString('auth_username');
+    final passwordHash = _preferences!.getString('auth_password_hash');
+    final role = _preferences!.getString('auth_role');
+    if (username != null && passwordHash != null && role != null) {
+      return {'username': username, 'passwordHash': passwordHash, 'role': role};
+    }
+    return null;
+  }
+
+  Future<void> clearAuthCredentials() async {
+    await _preferences!.remove('auth_username');
+    await _preferences!.remove('auth_password_hash');
+    await _preferences!.remove('auth_role');
+    await _preferences!.setBool('auth_logged_in', false);
+  }
+
+  Future<bool> isLoggedInOffline() async {
+    return _preferences!.getBool('auth_logged_in') ?? false;
+  }
+
   // ==================== USER-SPECIFIC METHODS ====================
 
-  // Get all users
   Future<Map<String, dynamic>> getUsers() async {
     final usersJson = _preferences!.getString('users');
-    if (usersJson == null || usersJson.isEmpty) {
-      return {};
-    }
+    if (usersJson == null || usersJson.isEmpty) return {};
     try {
       return jsonDecode(usersJson) as Map<String, dynamic>;
     } catch (e) {
@@ -91,10 +136,7 @@ class StorageService {
 
   Future<Map<String, dynamic>?> getUser(String username) async {
     final users = await getUsers();
-    if (users.containsKey(username)) {
-      return users[username] as Map<String, dynamic>;
-    }
-    return null;
+    return users[username] as Map<String, dynamic>?;
   }
 
   Future<void> updateUser(
@@ -122,9 +164,7 @@ class StorageService {
 
   Future<Map<String, dynamic>?> getSession() async {
     final sessionJson = _preferences!.getString('current_session');
-    if (sessionJson == null || sessionJson.isEmpty) {
-      return null;
-    }
+    if (sessionJson == null || sessionJson.isEmpty) return null;
     try {
       return jsonDecode(sessionJson) as Map<String, dynamic>;
     } catch (e) {
@@ -147,17 +187,13 @@ class StorageService {
 
   Future<int?> getDeviceId(String username) async {
     final user = await getUser(username);
-    if (user != null) {
-      return user['deviceId'];
-    }
-    return null;
+    return user?['deviceId'];
   }
 
   Future<void> saveDeviceCode(String username, String deviceCode) async {
     await _preferences!.setString('device_code_$username', deviceCode);
   }
 
-  // Temporary Keys (before activation) - user-specific
   Future<void> saveTemporaryKeys(
     String username,
     String installationId,
@@ -185,7 +221,6 @@ class StorageService {
     return null;
   }
 
-  // Activation Management (user-specific)
   Future<void> setActivationPending(
     String username,
     String activationCode,
@@ -200,10 +235,7 @@ class StorageService {
 
   Future<bool> isActivationPending(String username) async {
     final user = await getUser(username);
-    if (user != null) {
-      return user['activationPending'] ?? false;
-    }
-    return false;
+    return user?['activationPending'] ?? false;
   }
 
   Future<void> clearActivationPending(String username) async {
@@ -215,7 +247,6 @@ class StorageService {
     }
   }
 
-  // Device Credentials (after activation) - user-specific
   Future<void> saveDeviceCredentials(
     String username,
     String deviceToken,
@@ -240,7 +271,6 @@ class StorageService {
     return null;
   }
 
-  // Device Status (user-specific)
   Future<void> markDeviceActive(String username) async {
     final user = await getUser(username);
     if (user != null) {
@@ -252,21 +282,14 @@ class StorageService {
 
   Future<String> getDeviceStatus(String username) async {
     final user = await getUser(username);
-    if (user != null) {
-      return user['deviceStatus'] ?? 'PENDING';
-    }
-    return 'PENDING';
+    return user?['deviceStatus'] ?? 'PENDING';
   }
 
   Future<bool> isDeviceTrusted(String username) async {
     final user = await getUser(username);
-    if (user != null) {
-      return user['deviceTrusted'] ?? false;
-    }
-    return false;
+    return user?['deviceTrusted'] ?? false;
   }
 
-  // Permanent Key Storage (user-specific)
   Future<void> savePrivateKey(String username, String privateKey) async {
     final user = await getUser(username);
     if (user != null) {
@@ -277,10 +300,7 @@ class StorageService {
 
   Future<String?> getPrivateKey(String username) async {
     final user = await getUser(username);
-    if (user != null) {
-      return user['privateKey'];
-    }
-    return null;
+    return user?['privateKey'];
   }
 
   Future<void> savePublicKey(String username, String publicKey) async {
@@ -293,10 +313,7 @@ class StorageService {
 
   Future<String?> getPublicKey(String username) async {
     final user = await getUser(username);
-    if (user != null) {
-      return user['publicKey'];
-    }
-    return null;
+    return user?['publicKey'];
   }
 
   Future<void> saveInstallationId(
@@ -312,10 +329,7 @@ class StorageService {
 
   Future<String?> getInstallationId(String username) async {
     final user = await getUser(username);
-    if (user != null) {
-      return user['installationId'];
-    }
-    return null;
+    return user?['installationId'];
   }
 
   // API Configuration

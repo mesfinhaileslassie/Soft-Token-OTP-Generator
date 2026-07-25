@@ -101,6 +101,37 @@ class ApiService {
     }
   }
 
+  // ==================== USER PROFILE ====================
+
+  /// Get user profile by ID
+  Future<Map<String, dynamic>> getUserProfile(int userId) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final url = Uri.parse('$baseUrl/users/$userId');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data['data']};
+      } else {
+        final data = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to load profile',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
   // ==================== DEVICE ENDPOINTS ====================
 
   /// Register a device with the Payroll System
