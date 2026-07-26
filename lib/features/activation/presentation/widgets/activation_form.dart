@@ -88,10 +88,6 @@ class _ActivationFormState extends State<ActivationForm> {
       final storage = await StorageService.getInstance();
       final apiService = ApiService();
 
-      // ============================================================
-      // REMOVED LOGIN CHECK – Activation works without logging in
-      // ============================================================
-
       _debugPrint('📱 Step 1: Getting Device ID from Payroll System...');
       _debugPrintData('Activation Code being sent', code);
 
@@ -207,6 +203,15 @@ class _ActivationFormState extends State<ActivationForm> {
           data['secretKey'] ?? '',
         );
         await storage.markDeviceActiveGlobal();
+
+        // ✅ Save installation ID permanently – OVERWRITE with the activated ID
+        if (tempKeys != null && tempKeys['installationId'] != null) {
+          await storage.saveInstallationIdGlobal(tempKeys['installationId']!);
+          _debugPrint(
+            '✅ Permanent installation ID updated to activated ID: ${tempKeys['installationId']}',
+          );
+        }
+
         _debugPrint('✅ Device credentials stored globally');
         _debugPrint('✅ Device marked as ACTIVE and TRUSTED');
 

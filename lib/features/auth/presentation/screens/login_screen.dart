@@ -21,7 +21,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _isDeviceRegistered = false;
   bool _isLoading = true;
-  String? _installationId;
 
   @override
   void initState() {
@@ -33,20 +32,56 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       final storage = await StorageService.getInstance();
-      final tempKeys = await storage.getTemporaryKeysGlobal();
-      _installationId = tempKeys?['installationId'];
-      if (_installationId == null) {
+      String? installationId;
+
+      // 1️⃣ Try permanent global storage
+      installationId = await storage.getInstallationIdGlobal();
+      if (installationId != null) {
+        print('📱 Permanent installation ID found: $installationId');
+      }
+
+      // 2️⃣ If not found, try temporary global keys (may have been set during generation)
+      if (installationId == null) {
+        final tempKeys = await storage.getTemporaryKeysGlobal();
+        if (tempKeys != null && tempKeys['installationId'] != null) {
+          installationId = tempKeys['installationId'];
+          print('📱 Temporary installation ID found: $installationId');
+          // Save it permanently
+          await storage.saveInstallationIdGlobal(installationId!);
+        }
+      }
+
+      // 3️⃣ If still null, try to get from user-specific storage (if a session exists)
+      if (installationId == null) {
+        final session = await storage.getSession();
+        if (session != null && session['username'] != null) {
+          final username = session['username'];
+          final userInstallationId = await storage.getInstallationId(username);
+          if (userInstallationId != null) {
+            installationId = userInstallationId;
+            print('📱 User-specific installation ID found: $installationId');
+            await storage.saveInstallationIdGlobal(installationId!);
+          }
+        }
+      }
+
+      if (installationId == null) {
+        print('❌ No installation ID found');
         _isDeviceRegistered = false;
       } else {
+        print('📱 Final installation ID: $installationId');
         final apiService = ApiService();
-        final result = await apiService.checkDeviceRegistration(_installationId!);
+        final result = await apiService.checkDeviceRegistration(installationId);
         if (result['success'] && result['data']['registered'] == true) {
           _isDeviceRegistered = true;
+          print('✅ Device is registered');
         } else {
           _isDeviceRegistered = false;
+          print('❌ Device is NOT registered (backend check)');
         }
       }
     } catch (e) {
+      print('⚠️ Error checking registration: $e');
       _isDeviceRegistered = false;
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -55,7 +90,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Set navigation context for AuthProvider
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.setNavigationContext(context);
 
@@ -63,7 +97,6 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Background split
           Column(
             children: [
               Container(
@@ -74,14 +107,15 @@ class _LoginScreenState extends State<LoginScreen> {
               const Expanded(child: ColoredBox(color: Colors.white)),
             ],
           ),
-          // Foreground content
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   padding: const EdgeInsets.only(bottom: 32),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Column(
                       children: [
                         const SizedBox(height: 40),
@@ -96,13 +130,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               if (!_isLoading && !_isDeviceRegistered)
                                 OutlinedButton(
                                   onPressed: () {
-                                    // Navigate to device registration
                                     context.push(AppRouter.deviceRegistration);
                                   },
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppTheme.primaryColor,
-                                    side: const BorderSide(color: AppTheme.primaryColor),
-                                    minimumSize: const Size(double.infinity, 48),
+                                    side: const BorderSide(
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      48,
+                                    ),
                                   ),
                                   child: const Text('Register Device'),
                                 ),
@@ -112,7 +150,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 ),
                               const SizedBox(height: 28),

@@ -5,6 +5,7 @@ import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/features/token/providers/token_provider.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
+import 'package:payroll_soft_token_app/core/services/api_service.dart';
 import 'package:provider/provider.dart';
 
 class TokenScreen extends StatefulWidget {
@@ -16,13 +17,6 @@ class TokenScreen extends StatefulWidget {
 
 class _TokenScreenState extends State<TokenScreen> {
   String _userName = 'User';
-
-  // Shared amber palette used across the token card / security note so the
-  // page reads as one cohesive design (matches the Figma reference).
-  static const Color _amberBg = Color(0xFFF9E7C4);
-  static const Color _amberBgSoft = Color(0xFFFBEFD6);
-  static const Color _amberAccent = Color(0xFFE8A33D);
-  static const Color _amberText = Color(0xFFB8790C);
 
   @override
   void initState() {
@@ -36,22 +30,44 @@ class _TokenScreenState extends State<TokenScreen> {
   Future<void> _loadUserName() async {
     try {
       final storage = await StorageService.getInstance();
+
+      // 1️⃣ Try to get profile from storage
+      var profile = await storage.getUserProfile();
+      if (profile != null) {
+        final firstName = profile['firstName'] ?? '';
+        final lastName = profile['lastName'] ?? '';
+        if (firstName.isNotEmpty || lastName.isNotEmpty) {
+          setState(() {
+            _userName = '$firstName $lastName'.trim();
+          });
+          return;
+        }
+      }
+
+      // 2️⃣ If not in storage, fetch from API
+      final userId = await storage.getUserId();
+      if (userId != null && userId > 0) {
+        final apiService = ApiService();
+        final result = await apiService.getUserProfile(userId);
+        if (result['success']) {
+          final data = result['data'];
+          // Save for next time
+          await storage.saveUserProfile(data);
+          final firstName = data['firstName'] ?? '';
+          final lastName = data['lastName'] ?? '';
+          setState(() {
+            _userName = '$firstName $lastName'.trim();
+          });
+          return;
+        }
+      }
+
+      // 3️⃣ Fallback to username
       final session = await storage.getSession();
       if (session != null && session['username'] != null) {
-        final user = await storage.getUser(session['username']);
-        if (user != null) {
-          final firstName = user['firstName'] ?? '';
-          final lastName = user['lastName'] ?? '';
-          if (firstName.isNotEmpty || lastName.isNotEmpty) {
-            setState(() {
-              _userName = '$firstName $lastName'.trim();
-            });
-          } else {
-            setState(() {
-              _userName = session['username'];
-            });
-          }
-        }
+        setState(() {
+          _userName = session['username'];
+        });
       }
     } catch (e) {
       print('Error loading user name: $e');
@@ -80,7 +96,6 @@ class _TokenScreenState extends State<TokenScreen> {
                 children: [
                   const _TokenBadge(),
                   const SizedBox(height: 18),
-
                   Text(
                     'Welcome $_userName',
                     style: const TextStyle(
@@ -193,8 +208,6 @@ class _TokenScreenState extends State<TokenScreen> {
                                         style: TextButton.styleFrom(
                                           padding: EdgeInsets.zero,
                                           minimumSize: const Size(0, 0),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text(
                                           'Go to Device Registration',
@@ -229,7 +242,7 @@ class _TokenScreenState extends State<TokenScreen> {
                           horizontal: 20,
                         ),
                         decoration: BoxDecoration(
-                          color: _amberBg,
+                          color: const Color(0xFFF9E7C4),
                           borderRadius: BorderRadius.circular(18),
                         ),
                         child: Column(
@@ -274,7 +287,7 @@ class _TokenScreenState extends State<TokenScreen> {
                                   fontSize: 14,
                                   color: tokenProvider.secondsRemaining < 10
                                       ? Colors.red.shade700
-                                      : _amberText,
+                                      : const Color(0xFFB8790C),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -283,9 +296,9 @@ class _TokenScreenState extends State<TokenScreen> {
                                 borderRadius: BorderRadius.circular(3),
                                 child: LinearProgressIndicator(
                                   value: tokenProvider.secondsRemaining / 30,
-                                  backgroundColor: _amberAccent.withOpacity(
-                                    0.25,
-                                  ),
+                                  backgroundColor: const Color(
+                                    0xFFE8A33D,
+                                  ).withOpacity(0.25),
                                   color: tokenProvider.secondsRemaining < 10
                                       ? Colors.red.shade700
                                       : AppTheme.primaryColor,
@@ -298,6 +311,7 @@ class _TokenScreenState extends State<TokenScreen> {
                       );
                     },
                   ),
+
                   const SizedBox(height: 18),
 
                   // Generate Token Button
@@ -354,6 +368,7 @@ class _TokenScreenState extends State<TokenScreen> {
                       );
                     },
                   ),
+
                   const SizedBox(height: 16),
 
                   // Security Note
@@ -363,7 +378,7 @@ class _TokenScreenState extends State<TokenScreen> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: _amberBgSoft,
+                      color: const Color(0xFFFBEFD6),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -393,7 +408,11 @@ class _TokenScreenState extends State<TokenScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Icon(Icons.lock_outline, color: _amberAccent, size: 22),
+                        Icon(
+                          Icons.lock_outline,
+                          color: const Color(0xFFE8A33D),
+                          size: 22,
+                        ),
                       ],
                     ),
                   ),
@@ -512,8 +531,7 @@ class _TokenScreenState extends State<TokenScreen> {
   }
 }
 
-/// Concentric amber "shield + lock" badge shown under the header,
-/// matching the Figma reference. Purely decorative — no state involved.
+/// Concentric amber "shield + lock" badge shown under the header
 class _TokenBadge extends StatelessWidget {
   const _TokenBadge();
 
@@ -529,9 +547,9 @@ class _TokenBadge extends StatelessWidget {
             Container(
               width: 128,
               height: 128,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFF9E7C4),
+                color: Color(0xFFF9E7C4),
               ),
             ),
             Container(

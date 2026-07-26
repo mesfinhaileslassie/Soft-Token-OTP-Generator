@@ -9,6 +9,7 @@ import 'package:payroll_soft_token_app/features/profile/presentation/screens/pro
 import 'package:payroll_soft_token_app/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_success_screen.dart';
+import 'package:payroll_soft_token_app/features/device/presentation/screens/device_registration_screen.dart';
 
 class AppRouter {
   static const String login = '/login';
@@ -21,7 +22,7 @@ class AppRouter {
   static const String activationSuccess = '/activation-success';
 
   static final GoRouter router = GoRouter(
-    initialLocation: login,  // ✅ This ensures login page is shown first
+    initialLocation: login, // ✅ This ensures login page is shown first
     redirect: (context, state) {
       // You can add redirect logic here if needed
       return null;

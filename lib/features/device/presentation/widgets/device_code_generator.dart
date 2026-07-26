@@ -77,6 +77,19 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         privateKey,
       );
 
+      // ✅ Save installation ID permanently ONLY if not already set
+      final existingId = await storage.getInstallationIdGlobal();
+      if (existingId == null) {
+        await storage.saveInstallationIdGlobal(installationId);
+        print(
+          '✅ Permanent installation ID saved for first time: $installationId',
+        );
+      } else {
+        print(
+          'ℹ️ Permanent installation ID already exists: $existingId (not overwritten)',
+        );
+      }
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('device_code_global', codeString);
 

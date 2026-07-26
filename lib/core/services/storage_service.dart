@@ -68,7 +68,31 @@ class StorageService {
     return _preferences!.getBool('device_active_global') ?? false;
   }
 
+  // ==================== PERMANENT INSTALLATION ID ====================
+
+  Future<void> saveInstallationIdGlobal(String installationId) async {
+    await _preferences!.setString('installation_id_global', installationId);
+  }
+
+  Future<String?> getInstallationIdGlobal() async {
+    return _preferences!.getString('installation_id_global');
+  }
+
   // ==================== USER PROFILE DATA ====================
+
+  Future<void> saveUserProfile(Map<String, dynamic> profile) async {
+    await _preferences!.setString('user_profile', jsonEncode(profile));
+  }
+
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    final profileJson = _preferences!.getString('user_profile');
+    if (profileJson == null || profileJson.isEmpty) return null;
+    try {
+      return jsonDecode(profileJson) as Map<String, dynamic>;
+    } catch (e) {
+      return null;
+    }
+  }
 
   Future<void> saveUserId(int userId) async {
     await _preferences!.setInt('user_id', userId);
