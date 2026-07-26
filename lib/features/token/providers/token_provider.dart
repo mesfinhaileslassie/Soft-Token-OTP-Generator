@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
+import 'package:payroll_soft_token_app/core/services/api_service.dart';
 
 class TokenProvider extends ChangeNotifier {
   String _token = '';
@@ -131,6 +132,37 @@ class TokenProvider extends ChangeNotifier {
           DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
       final counter = timeInSeconds ~/ 30;
 
+      // ---- NEW: Send counter to backend ----
+      String? installationId;
+      final globalKeys = await storage.getTemporaryKeysGlobal();
+      if (globalKeys != null && globalKeys['installationId'] != null) {
+        installationId = globalKeys['installationId'];
+      } else {
+        // Fallback to user-specific
+        final session = await storage.getSession();
+        if (session != null && session['username'] != null) {
+          installationId = await storage.getInstallationId(session['username']);
+        }
+      }
+      if (installationId != null) {
+        try {
+          final apiService = ApiService();
+          await apiService.storeCounter(
+            installationId: installationId,
+            counter: counter,
+          );
+          print(
+            '✅ Counter $counter sent to backend for device $installationId',
+          );
+        } catch (e) {
+          print('⚠️ Failed to send counter to backend: ${e.toString()}');
+          // Continue anyway – the backend will fall back to time-based validation
+        }
+      } else {
+        print('⚠️ Installation ID not found, cannot store counter');
+      }
+
+      // Continue with OTP generation (unchanged)
       print('🔑 SECRET KEY: $secretKey');
       print('⏰ Flutter UTC Time: ${DateTime.now().toUtc()}');
       print('🔄 Flutter Counter: $counter');

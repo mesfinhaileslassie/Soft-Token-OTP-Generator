@@ -347,6 +347,39 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> storeCounter({
+    required String installationId,
+    required int counter,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final url = Uri.parse('$baseUrl/device/store-counter');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: jsonEncode({
+          'installationId': installationId,
+          'counter': counter,
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data};
+      } else {
+        final data = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to store counter',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
   // ==================== DEVICE REGISTRATION CHECK ====================
 
   Future<Map<String, dynamic>> checkDeviceRegistration(
