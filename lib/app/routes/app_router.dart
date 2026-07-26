@@ -10,6 +10,7 @@ import 'package:payroll_soft_token_app/features/profile/presentation/screens/cha
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_success_screen.dart';
 import 'package:payroll_soft_token_app/features/device/presentation/screens/device_registration_screen.dart';
+import 'package:payroll_soft_token_app/features/debug/presentation/screens/debug_storage_screen.dart';
 
 class AppRouter {
   static const String login = '/login';
@@ -67,6 +68,11 @@ class AppRouter {
         path: activationSuccess,
         name: 'activation-success',
         builder: (context, state) => const ActivationSuccessScreen(),
+      ),
+      GoRoute(
+        path: '/debug-storage',
+        name: 'debug-storage',
+        builder: (context, state) => const DebugStorageScreen(),
       ),
     ],
   );

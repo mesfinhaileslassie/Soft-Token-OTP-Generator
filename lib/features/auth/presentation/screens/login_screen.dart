@@ -34,24 +34,14 @@ class _LoginScreenState extends State<LoginScreen> {
       final storage = await StorageService.getInstance();
       String? installationId;
 
-      // 1️⃣ Try permanent global storage
       installationId = await storage.getInstallationIdGlobal();
-      if (installationId != null) {
-        print('📱 Permanent installation ID found: $installationId');
-      }
-
-      // 2️⃣ If not found, try temporary global keys (may have been set during generation)
       if (installationId == null) {
         final tempKeys = await storage.getTemporaryKeysGlobal();
         if (tempKeys != null && tempKeys['installationId'] != null) {
           installationId = tempKeys['installationId'];
-          print('📱 Temporary installation ID found: $installationId');
-          // Save it permanently
           await storage.saveInstallationIdGlobal(installationId!);
         }
       }
-
-      // 3️⃣ If still null, try to get from user-specific storage (if a session exists)
       if (installationId == null) {
         final session = await storage.getSession();
         if (session != null && session['username'] != null) {
@@ -59,29 +49,23 @@ class _LoginScreenState extends State<LoginScreen> {
           final userInstallationId = await storage.getInstallationId(username);
           if (userInstallationId != null) {
             installationId = userInstallationId;
-            print('📱 User-specific installation ID found: $installationId');
             await storage.saveInstallationIdGlobal(installationId!);
           }
         }
       }
 
       if (installationId == null) {
-        print('❌ No installation ID found');
         _isDeviceRegistered = false;
       } else {
-        print('📱 Final installation ID: $installationId');
         final apiService = ApiService();
         final result = await apiService.checkDeviceRegistration(installationId);
         if (result['success'] && result['data']['registered'] == true) {
           _isDeviceRegistered = true;
-          print('✅ Device is registered');
         } else {
           _isDeviceRegistered = false;
-          print('❌ Device is NOT registered (backend check)');
         }
       }
     } catch (e) {
-      print('⚠️ Error checking registration: $e');
       _isDeviceRegistered = false;
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -157,6 +141,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               const SizedBox(height: 28),
                               const LoginFooter(),
+                              // 👇 NEW DEBUG BUTTON
+                              const SizedBox(height: 16),
+                              GestureDetector(
+                                onTap: () {
+                                  context.push('/debug-storage');
+                                },
+                                child: Text(
+                                  '🔧 Debug Storage',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade500,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),

@@ -92,27 +92,57 @@ class _LoginFormState extends State<LoginForm> {
       setState(() => _isLoading = true);
 
       try {
+        final storage = await StorageService.getInstance();
+        final username = _usernameController.text.trim();
+        final password = _passwordController.text;
+
+        // 1️⃣ Try offline login first
+        final authProvider = context.read<AuthProvider>();
+        final offlineSuccess = await authProvider.offlineLogin(
+          username,
+          password,
+        );
+        if (offlineSuccess) {
+          // Offline login succeeded – no further action needed
+          if (mounted) setState(() => _isLoading = false);
+          return;
+        }
+
+        // 2️⃣ Fallback to backend login
         final apiService = ApiService();
         final result = await apiService.loginUser(
-          username: _usernameController.text.trim(),
-          password: _passwordController.text,
+          username: username,
+          password: password,
         );
 
         if (result['success']) {
           final data = result['data'];
-          final storage = await StorageService.getInstance();
-          final username = _usernameController.text.trim();
-
-          // Save session
-          await storage.saveSession(username, data['token'] ?? '');
-
-          // ✅ Save user ID for profile
-          final userId = data['userId'] ?? 0;
-          if (userId > 0) {
-            await storage.saveUserId(userId);
+          // Store profile info for later use
+          final profile = {
+            'userId': data['userId'],
+            'username': data['username'],
+            'role': data['role'],
+            'firstName': data['firstName'] ?? '',
+            'lastName': data['lastName'] ?? '',
+            'email': data['email'] ?? '',
+            // ... add other fields if returned
+          };
+          await authProvider.login(
+            username: username,
+            password: password,
+            rememberMe: true,
+            userData: profile,
+          );
+          // Also fetch full profile if needed
+          if (data['userId'] != null) {
+            final profileResult = await apiService.getUserProfile(
+              data['userId'],
+            );
+            if (profileResult['success']) {
+              await storage.saveUserProfile(profileResult['data']);
+            }
           }
-
-          // Associate global device (if activated before login)
+          // Associate global device
           final isActiveGlobal = await storage.isDeviceActiveGlobal();
           if (isActiveGlobal) {
             final globalCreds = await storage.getDeviceCredentialsGlobal();
@@ -125,10 +155,6 @@ class _LoginFormState extends State<LoginForm> {
               await storage.markDeviceActive(username);
             }
           }
-
-          if (mounted) {
-            context.go(AppRouter.token);
-          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -136,6 +162,7 @@ class _LoginFormState extends State<LoginForm> {
               backgroundColor: Colors.red,
             ),
           );
+          setState(() => _isLoading = false);
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -144,8 +171,7 @@ class _LoginFormState extends State<LoginForm> {
             backgroundColor: Colors.red,
           ),
         );
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
+        setState(() => _isLoading = false);
       }
     }
   }

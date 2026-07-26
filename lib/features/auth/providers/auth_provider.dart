@@ -1,9 +1,10 @@
 ﻿// lib/features/auth/providers/auth_provider.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
-import 'package:go_router/go_router.dart';
+import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -22,7 +23,7 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   AuthProvider() {
-    // No auto-login
+    autoLogin();
   }
 
   void setNavigationContext(BuildContext context) {
@@ -36,12 +37,47 @@ class AuthProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  // ==================== LOGIN (with local + backend fallback) ====================
+  // ==================== AUTO LOGIN (offline) ====================
+
+  Future<void> autoLogin() async {
+    final storage = await StorageService.getInstance();
+    final creds = await storage.getAuthCredentials();
+    if (creds != null) {
+      _username = creds['username'];
+      _role = creds['role'];
+      _isAuthenticated = true;
+      notifyListeners();
+      _navigateToDashboard();
+    }
+  }
+
+  // ==================== OFFLINE LOGIN (called from login_form) ====================
+
+  Future<bool> offlineLogin(String username, String password) async {
+    final storage = await StorageService.getInstance();
+    final creds = await storage.getAuthCredentials();
+    if (creds == null || creds['username'] != username) return false;
+
+    // Hash the entered password and compare
+    final enteredHash = sha256.convert(utf8.encode(password)).toString();
+    if (enteredHash != creds['passwordHash']) return false;
+
+    // Success
+    _username = username;
+    _role = creds['role'] ?? 'Employee';
+    _isAuthenticated = true;
+    notifyListeners();
+    _navigateToDashboard();
+    return true;
+  }
+
+  // ==================== ONLINE LOGIN (from backend) ====================
 
   Future<void> login({
     required String username,
     required String password,
     required bool rememberMe,
+    required Map<String, dynamic> userData, // from backend response
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -50,79 +86,30 @@ class AuthProvider extends ChangeNotifier {
     try {
       final storage = await StorageService.getInstance();
 
-      // Step 1: Check local credentials (offline)
-      final localCreds = await storage.getAuthCredentials();
-      if (localCreds != null) {
-        final storedUsername = localCreds['username'];
-        final storedHash = localCreds['passwordHash'];
-        final enteredHash = sha256.convert(utf8.encode(password)).toString();
-
-        if (storedUsername == username && storedHash == enteredHash) {
-          // Local validation success
-          _username = username;
-          _role = localCreds['role'] ?? 'Employee';
-          _isAuthenticated = true;
-          _isLoading = false;
-
-          // Save session
-          final token = 'session_${DateTime.now().millisecondsSinceEpoch}';
-          await storage.saveSession(username, token);
-
-          notifyListeners();
-          _navigateToDashboard();
-          return;
-        }
-      }
-
-      // Step 2: Fallback to backend validation (online)
-      // (We need to call the backend API – but we don't have a real backend here, so simulate)
-      // For demo, we'll simulate with the existing storage service, but you should replace with actual API call.
-      // In a real app, you would call ApiService.loginUser()
-      final user = await storage.getUser(username);
-      if (user == null) {
-        _errorMessage = 'Invalid username or password';
-        _isLoading = false;
-        notifyListeners();
-        return;
-      }
-      if (user['password'] != password) {
-        _errorMessage = 'Invalid password';
-        _isLoading = false;
-        notifyListeners();
-        return;
-      }
-
-      // Step 3: Save credentials locally for offline use
-      final passwordHash = sha256.convert(utf8.encode(password)).toString();
-      await storage.saveAuthCredentials(
-        username,
-        passwordHash,
-        user['role'] ?? 'Employee',
-      );
-
       // Save session
       final token = 'session_${DateTime.now().millisecondsSinceEpoch}';
       await storage.saveSession(username, token);
 
+      // Save auth credentials for offline login
+      final passwordHash = sha256.convert(utf8.encode(password)).toString();
+      final role = userData['role'] ?? 'Employee';
+      await storage.saveAuthCredentials(username, passwordHash, role);
+
+      // Save user profile
+      if (userData['userId'] != null) {
+        await storage.saveUserId(userData['userId']);
+        await storage.saveUsername(username);
+        // Save profile if we have it (from the response or we'll fetch later)
+        if (userData['firstName'] != null) {
+          await storage.saveUserProfile(userData);
+        }
+      }
+
       _username = username;
-      _role = user['role'] ?? 'Employee';
+      _role = role;
       _isAuthenticated = true;
       _isLoading = false;
       notifyListeners();
-
-      // Associate global device (if any)
-      final isActiveGlobal = await storage.isDeviceActiveGlobal();
-      if (isActiveGlobal) {
-        final globalCreds = await storage.getDeviceCredentialsGlobal();
-        if (globalCreds != null) {
-          await storage.saveDeviceCredentials(
-            username,
-            globalCreds['deviceToken']!,
-            globalCreds['secretKey']!,
-          );
-          await storage.markDeviceActive(username);
-        }
-      }
 
       _navigateToDashboard();
     } catch (e) {
@@ -135,9 +122,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     final storage = await StorageService.getInstance();
     await storage.clearSession();
-    // Optionally: keep credentials stored so user can login offline later.
-    // If you want to clear credentials on logout, uncomment:
-    // await storage.clearAuthCredentials();
+    await storage.clearAuthCredentials();
     _isAuthenticated = false;
     _username = null;
     _role = null;
@@ -150,7 +135,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ==================== NAVIGATION HELPERS ====================
+  // ==================== NAVIGATION ====================
 
   void _navigateToDashboard() {
     if (_isDisposed || _isNavigating || _navigationContext == null) return;
@@ -165,7 +150,7 @@ class AuthProvider extends ChangeNotifier {
               ? '/payroll-officer/dashboard'
               : role == 'FinanceManager'
               ? '/finance-manager/dashboard'
-              : '/employee/dashboard';
+              : '/token';
           GoRouter.of(_navigationContext!).go(path);
         } catch (e) {
           print('Navigation error: $e');
