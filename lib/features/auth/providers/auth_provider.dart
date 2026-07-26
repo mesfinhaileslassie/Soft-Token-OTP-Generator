@@ -44,40 +44,38 @@ class AuthProvider extends ChangeNotifier {
     final creds = await storage.getAuthCredentials();
     if (creds != null) {
       _username = creds['username'];
-      _role = creds['role'];
+      _role = creds['role'] ?? 'Employee';
       _isAuthenticated = true;
       notifyListeners();
-      _navigateToDashboard();
+      _navigateToTokenScreen(); // Always go to token screen
     }
   }
 
-  // ==================== OFFLINE LOGIN (called from login_form) ====================
+  // ==================== OFFLINE LOGIN ====================
 
   Future<bool> offlineLogin(String username, String password) async {
     final storage = await StorageService.getInstance();
     final creds = await storage.getAuthCredentials();
     if (creds == null || creds['username'] != username) return false;
 
-    // Hash the entered password and compare
     final enteredHash = sha256.convert(utf8.encode(password)).toString();
     if (enteredHash != creds['passwordHash']) return false;
 
-    // Success
     _username = username;
     _role = creds['role'] ?? 'Employee';
     _isAuthenticated = true;
     notifyListeners();
-    _navigateToDashboard();
+    _navigateToTokenScreen();
     return true;
   }
 
-  // ==================== ONLINE LOGIN (from backend) ====================
+  // ==================== ONLINE LOGIN ====================
 
   Future<void> login({
     required String username,
     required String password,
     required bool rememberMe,
-    required Map<String, dynamic> userData, // from backend response
+    required Map<String, dynamic> userData,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -86,20 +84,16 @@ class AuthProvider extends ChangeNotifier {
     try {
       final storage = await StorageService.getInstance();
 
-      // Save session
       final token = 'session_${DateTime.now().millisecondsSinceEpoch}';
       await storage.saveSession(username, token);
 
-      // Save auth credentials for offline login
       final passwordHash = sha256.convert(utf8.encode(password)).toString();
       final role = userData['role'] ?? 'Employee';
       await storage.saveAuthCredentials(username, passwordHash, role);
 
-      // Save user profile
       if (userData['userId'] != null) {
         await storage.saveUserId(userData['userId']);
         await storage.saveUsername(username);
-        // Save profile if we have it (from the response or we'll fetch later)
         if (userData['firstName'] != null) {
           await storage.saveUserProfile(userData);
         }
@@ -111,7 +105,7 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
 
-      _navigateToDashboard();
+      _navigateToTokenScreen();
     } catch (e) {
       _errorMessage = 'An error occurred: ${e.toString()}';
       _isLoading = false;
@@ -137,21 +131,13 @@ class AuthProvider extends ChangeNotifier {
 
   // ==================== NAVIGATION ====================
 
-  void _navigateToDashboard() {
+  void _navigateToTokenScreen() {
     if (_isDisposed || _isNavigating || _navigationContext == null) return;
     _isNavigating = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDisposed && _navigationContext != null) {
         try {
-          final role = _role ?? 'Employee';
-          final path = role == 'Admin'
-              ? '/admin/dashboard'
-              : role == 'PayrollOfficer'
-              ? '/payroll-officer/dashboard'
-              : role == 'FinanceManager'
-              ? '/finance-manager/dashboard'
-              : '/token';
-          GoRouter.of(_navigationContext!).go(path);
+          GoRouter.of(_navigationContext!).go(AppRouter.token);
         } catch (e) {
           print('Navigation error: $e');
         }
@@ -166,7 +152,7 @@ class AuthProvider extends ChangeNotifier {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDisposed && _navigationContext != null) {
         try {
-          GoRouter.of(_navigationContext!).go('/login');
+          GoRouter.of(_navigationContext!).go(AppRouter.login);
         } catch (e) {
           print('Navigation error: $e');
         }

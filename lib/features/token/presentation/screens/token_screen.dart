@@ -30,31 +30,36 @@ class _TokenScreenState extends State<TokenScreen> {
   Future<void> _loadUserName() async {
     try {
       final storage = await StorageService.getInstance();
+      final userId = await storage.getUserId();
 
-      // 1️⃣ Try to get profile from storage
+      // 1️⃣ Try to fetch from backend (most up-to-date)
+      if (userId != null && userId > 0) {
+        try {
+          final apiService = ApiService();
+          final result = await apiService.getUserProfile(userId);
+          if (result['success']) {
+            final data = result['data'];
+            // Save updated profile locally
+            await storage.saveUserProfile(data);
+            final firstName = data['firstName'] ?? '';
+            final lastName = data['lastName'] ?? '';
+            setState(() {
+              _userName = '$firstName $lastName'.trim();
+            });
+            return;
+          }
+        } catch (e) {
+          // If fetch fails, fallback to stored
+          print('Error fetching profile from backend: $e');
+        }
+      }
+
+      // 2️⃣ Fallback to stored profile
       var profile = await storage.getUserProfile();
       if (profile != null) {
         final firstName = profile['firstName'] ?? '';
         final lastName = profile['lastName'] ?? '';
         if (firstName.isNotEmpty || lastName.isNotEmpty) {
-          setState(() {
-            _userName = '$firstName $lastName'.trim();
-          });
-          return;
-        }
-      }
-
-      // 2️⃣ If not in storage, fetch from API
-      final userId = await storage.getUserId();
-      if (userId != null && userId > 0) {
-        final apiService = ApiService();
-        final result = await apiService.getUserProfile(userId);
-        if (result['success']) {
-          final data = result['data'];
-          // Save for next time
-          await storage.saveUserProfile(data);
-          final firstName = data['firstName'] ?? '';
-          final lastName = data['lastName'] ?? '';
           setState(() {
             _userName = '$firstName $lastName'.trim();
           });
