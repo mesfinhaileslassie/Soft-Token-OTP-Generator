@@ -33,9 +33,19 @@ class AppRouter {
         final isLoginRoute = state.uri.path == login;
         final isRegisterRoute = state.uri.path == register;
         final isDebugRoute = state.uri.path == debugStorage;
+        final isDeviceRegistrationRoute = state.uri.path == deviceRegistration;
+        final isActivationRoute = state.uri.path == activation;
+        final isActivationSuccessRoute = state.uri.path == activationSuccess;
 
-        // Allow access to login, register, and debug without auth
-        if (isLoginRoute || isRegisterRoute || isDebugRoute) return null;
+        // Allow public routes without auth
+        if (isLoginRoute ||
+            isRegisterRoute ||
+            isDebugRoute ||
+            isDeviceRegistrationRoute ||
+            isActivationRoute ||
+            isActivationSuccessRoute) {
+          return null;
+        }
 
         // If not authenticated, redirect to login
         if (!isAuthenticated) return login;
