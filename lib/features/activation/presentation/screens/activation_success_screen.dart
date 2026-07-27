@@ -35,15 +35,6 @@ class ActivationSuccessScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Text(
-                  'Soft Token',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white70,
-                    letterSpacing: 1,
-                  ),
-                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Activation Successful',
@@ -97,28 +88,20 @@ class ActivationSuccessScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                          // Scattered stars around the ring
-                          const _Sparkle(top: 8, left: 60, size: 12),
-                          const _Sparkle(top: 20, right: 30, size: 16),
-                          const _Sparkle(top: 70, right: 4, size: 10),
-                          const _Sparkle(bottom: 60, right: 10, size: 14),
-                          const _Sparkle(bottom: 15, right: 55, size: 10),
-                          const _Sparkle(bottom: 15, left: 55, size: 10),
-                          const _Sparkle(bottom: 60, left: 6, size: 14),
-                          const _Sparkle(top: 65, left: 0, size: 10),
-                          // Center circle with tick
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF26D560),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              size: 52,
-                              color: Colors.white,
-                            ),
+                          // Scattered sunny icons around the ring
+                          const _Sunny(top: 8, left: 55, size: 16),
+                          const _Sunny(top: 25, right: 25, size: 18),
+                          const _Sunny(top: 75, right: 0, size: 16),
+                          const _Sunny(bottom: 65, right: 5, size: 16),
+                          const _Sunny(bottom: 10, right: 50, size: 16),
+                          const _Sunny(bottom: 10, left: 50, size: 16),
+                          const _Sunny(bottom: 65, left: 0, size: 16),
+                          const _Sunny(top: 70, left: 0, size: 14),
+                          // Shield icon with tick, like the design
+                          const Icon(
+                            Icons.gpp_good,
+                            size: 110,
+                            color: Color(0xFF26D560),
                           ),
                         ],
                       ),
@@ -162,7 +145,7 @@ class ActivationSuccessScreen extends StatelessWidget {
                             letterSpacing: 0.5,
                           ),
                         ),
-                        child: const Text('Continue to Home'),
+                        child: const Text('Continue to login'),
                       ),
                     ),
                   ],
@@ -186,22 +169,16 @@ class ActivationSuccessScreen extends StatelessWidget {
   }
 }
 
-/// Small star/sparkle decoration positioned around the tick circle,
-/// matching the scattered stars in the design.
-class _Sparkle extends StatelessWidget {
+/// Small sunny-icon decoration positioned around the shield,
+/// matching the scattered sun icons in the design.
+class _Sunny extends StatelessWidget {
   final double? top;
   final double? bottom;
   final double? left;
   final double? right;
   final double size;
 
-  const _Sparkle({
-    this.top,
-    this.bottom,
-    this.left,
-    this.right,
-    this.size = 12,
-  });
+  const _Sunny({this.top, this.bottom, this.left, this.right, this.size = 16});
 
   @override
   Widget build(BuildContext context) {
@@ -211,9 +188,9 @@ class _Sparkle extends StatelessWidget {
       left: left,
       right: right,
       child: Icon(
-        Icons.auto_awesome,
+        Icons.wb_sunny,
         size: size,
-        color: const Color(0xFF26D560).withOpacity(0.7),
+        color: const Color(0xFF26D560).withOpacity(0.6),
       ),
     );
   }
