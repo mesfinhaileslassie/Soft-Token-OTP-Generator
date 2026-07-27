@@ -37,7 +37,7 @@ class AppRouter {
         final isActivationRoute = state.uri.path == activation;
         final isActivationSuccessRoute = state.uri.path == activationSuccess;
 
-        // Allow public routes without auth
+        // Allow these routes without authentication
         if (isLoginRoute ||
             isRegisterRoute ||
             isDebugRoute ||

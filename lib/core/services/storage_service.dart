@@ -376,6 +376,16 @@ class StorageService {
     return user?['installationId'];
   }
 
+  // ==================== DEVICE REGISTRATION STATUS (OFFLINE) ====================
+
+  Future<void> setDeviceRegisteredOffline(bool registered) async {
+    await _preferences!.setBool('device_registered_offline', registered);
+  }
+
+  Future<bool> isDeviceRegisteredOffline() async {
+    return _preferences!.getBool('device_registered_offline') ?? false;
+  }
+
   // API Configuration
   Future<String> getApiBaseUrl() async {
     return _preferences!.getString('api_base_url') ??

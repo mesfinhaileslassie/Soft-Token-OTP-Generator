@@ -40,8 +40,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _isLoading = true;
       _error = null;
     });
+
     try {
       final storage = await StorageService.getInstance();
+
+      // 1️⃣ First, check if we already have a profile in local storage
+      final localProfile = await storage.getUserProfile();
+      if (localProfile != null) {
+        // ✅ Local profile exists – display immediately and skip API call
+        setState(() {
+          _userData = localProfile;
+          _isLoading = false;
+          _error = null;
+        });
+        return;
+      }
+
+      // 2️⃣ No local profile – try to fetch from API
       final userId = await storage.getUserId();
       if (userId == null || userId == 0) {
         setState(() {
@@ -51,9 +66,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
         return;
       }
+
       final apiService = ApiService();
       final result = await apiService.getUserProfile(userId);
       if (result['success']) {
+        // Save to local storage for future offline use
+        await storage.saveUserProfile(result['data']);
         setState(() {
           _userData = result['data'];
           _isLoading = false;
@@ -67,6 +85,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
+      // If we reach this point, local profile was missing AND API failed.
+      // Show error – the user can retry.
       setState(() {
         _userData = null;
         _error = 'Error: ${e.toString()}';

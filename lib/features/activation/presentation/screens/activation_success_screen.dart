@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
+import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 
 class ActivationSuccessScreen extends StatelessWidget {
   const ActivationSuccessScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Set flag when this screen is shown
+    _setDeviceRegisteredFlag();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -17,10 +21,7 @@ class ActivationSuccessScreen extends StatelessWidget {
             // Header with #9E0000 background
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 40,
-                bottom: 16,
-              ),
+              padding: const EdgeInsets.only(top: 40, bottom: 16),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor,
                 boxShadow: [
@@ -87,12 +88,14 @@ class ActivationSuccessScreen extends StatelessWidget {
             ),
             // Main Content
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Success Icon
                     Container(
                       width: 100,
                       height: 100,
@@ -111,7 +114,6 @@ class ActivationSuccessScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Congratulations Text
                     const Text(
                       'Congratulations!',
                       style: TextStyle(
@@ -130,7 +132,6 @@ class ActivationSuccessScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
-                    // Continue to Token Screen Button
                     ElevatedButton(
                       onPressed: () {
                         context.go(AppRouter.token);
@@ -159,5 +160,15 @@ class ActivationSuccessScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _setDeviceRegisteredFlag() async {
+    try {
+      final storage = await StorageService.getInstance();
+      await storage.setDeviceRegisteredOffline(true);
+      print('✅ Device registration flag set to true (offline)');
+    } catch (e) {
+      print('Error setting device registered flag: $e');
+    }
   }
 }
