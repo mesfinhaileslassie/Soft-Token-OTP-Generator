@@ -32,9 +32,18 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       final storage = await StorageService.getInstance();
-      String? installationId;
 
-      installationId = await storage.getInstallationIdGlobal();
+      // 1️⃣ First, check offline flag – if set, we know the device is registered
+      final isRegisteredOffline = await storage.isDeviceRegisteredOffline();
+      if (isRegisteredOffline) {
+        // Device registered locally – hide button
+        _isDeviceRegistered = true;
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2️⃣ No offline flag – try to fetch installation ID and check backend
+      String? installationId = await storage.getInstallationIdGlobal();
       if (installationId == null) {
         final tempKeys = await storage.getTemporaryKeysGlobal();
         if (tempKeys != null && tempKeys['installationId'] != null) {
@@ -55,18 +64,24 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (installationId == null) {
+        // No installation ID found – device is not registered
         _isDeviceRegistered = false;
       } else {
         final apiService = ApiService();
         final result = await apiService.checkDeviceRegistration(installationId);
         if (result['success'] && result['data']['registered'] == true) {
+          // Backend confirms registration – save offline flag and hide button
+          await storage.setDeviceRegisteredOffline(true);
           _isDeviceRegistered = true;
         } else {
           _isDeviceRegistered = false;
         }
       }
     } catch (e) {
-      _isDeviceRegistered = false;
+      // If API fails, fallback to offline flag if it exists
+      final storage = await StorageService.getInstance();
+      final isRegisteredOffline = await storage.isDeviceRegisteredOffline();
+      _isDeviceRegistered = isRegisteredOffline;
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -141,7 +156,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               const SizedBox(height: 28),
                               const LoginFooter(),
-                              // 👇 NEW DEBUG BUTTON
                               const SizedBox(height: 16),
                               GestureDetector(
                                 onTap: () {

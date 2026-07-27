@@ -204,7 +204,7 @@ class _ActivationFormState extends State<ActivationForm> {
         );
         await storage.markDeviceActiveGlobal();
 
-        // ✅ Save installation ID permanently – OVERWRITE with the activated ID
+        // ✅ Save installation ID permanently
         if (tempKeys != null && tempKeys['installationId'] != null) {
           await storage.saveInstallationIdGlobal(tempKeys['installationId']!);
           _debugPrint(
@@ -212,8 +212,12 @@ class _ActivationFormState extends State<ActivationForm> {
           );
         }
 
+        // ✅ Set offline registration flag – this hides the "Register Device" button
+        await storage.setDeviceRegisteredOffline(true);
+
         _debugPrint('✅ Device credentials stored globally');
         _debugPrint('✅ Device marked as ACTIVE and TRUSTED');
+        _debugPrint('✅ Offline registration flag set to true');
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('activation_code', code);

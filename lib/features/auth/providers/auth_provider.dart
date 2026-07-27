@@ -23,7 +23,8 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   AuthProvider() {
-    autoLogin();
+    // ❌ Do NOT auto-login on app start.
+    // The app should always start at the login screen.
   }
 
   void setNavigationContext(BuildContext context) {
@@ -35,20 +36,6 @@ class AuthProvider extends ChangeNotifier {
     _isDisposed = true;
     _navigationContext = null;
     super.dispose();
-  }
-
-  // ==================== AUTO LOGIN (offline) ====================
-
-  Future<void> autoLogin() async {
-    final storage = await StorageService.getInstance();
-    final creds = await storage.getAuthCredentials();
-    if (creds != null) {
-      _username = creds['username'];
-      _role = creds['role'] ?? 'Employee';
-      _isAuthenticated = true;
-      notifyListeners();
-      _navigateToTokenScreen(); // Always go to token screen
-    }
   }
 
   // ==================== OFFLINE LOGIN ====================
@@ -84,13 +71,21 @@ class AuthProvider extends ChangeNotifier {
     try {
       final storage = await StorageService.getInstance();
 
+      // Save session token (used for session persistence across app usage)
       final token = 'session_${DateTime.now().millisecondsSinceEpoch}';
       await storage.saveSession(username, token);
 
-      final passwordHash = sha256.convert(utf8.encode(password)).toString();
-      final role = userData['role'] ?? 'Employee';
-      await storage.saveAuthCredentials(username, passwordHash, role);
+      // If rememberMe is true, save credentials for offline login
+      if (rememberMe) {
+        final passwordHash = sha256.convert(utf8.encode(password)).toString();
+        final role = userData['role'] ?? 'Employee';
+        await storage.saveAuthCredentials(username, passwordHash, role);
+      } else {
+        // Ensure no lingering credentials are stored
+        await storage.clearAuthCredentials();
+      }
 
+      // Always save user profile and ID for offline profile display
       if (userData['userId'] != null) {
         await storage.saveUserId(userData['userId']);
         await storage.saveUsername(username);
@@ -100,7 +95,7 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _username = username;
-      _role = role;
+      _role = userData['role'] ?? 'Employee';
       _isAuthenticated = true;
       _isLoading = false;
       notifyListeners();
