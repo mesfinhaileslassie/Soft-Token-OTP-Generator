@@ -22,6 +22,7 @@ class _ActivationFormState extends State<ActivationForm> {
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false;
+  String _loadingMessage = '';
 
   @override
   void dispose() {
@@ -61,16 +62,7 @@ class _ActivationFormState extends State<ActivationForm> {
   Future<void> _handleActivate() async {
     final code = _controllers.map((c) => c.text).join();
 
-    _debugPrint('═══════════════════════════════════════════════════════════');
-    _debugPrint('🚀 ACTIVATE DEVICE BUTTON CLICKED');
-    _debugPrintData('Activation Code Entered', code);
-    _debugPrintData('Code Length', code.length);
-    _debugPrint('═══════════════════════════════════════════════════════════');
-
     if (code.length < 6) {
-      _debugPrint(
-        '❌ ERROR: Activation code must be 6 digits, got ${code.length} digits',
-      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter all 6 digits of the activation code'),
@@ -82,24 +74,18 @@ class _ActivationFormState extends State<ActivationForm> {
 
     setState(() {
       _isLoading = true;
+      _loadingMessage = 'Verifying device...';
     });
 
     try {
       final storage = await StorageService.getInstance();
       final apiService = ApiService();
 
-      _debugPrint('📱 Step 1: Getting Device ID from Payroll System...');
-      _debugPrintData('Activation Code being sent', code);
-
+      // Step 1: Get Device ID
       final deviceResult = await apiService.getDeviceIdByActivationCode(code);
       _debugPrintData('Device Result', deviceResult);
 
-      if (!deviceResult['success']) {
-        _debugPrint('❌ ERROR: Failed to get Device ID');
-        _debugPrintData(
-          'Error Message',
-          deviceResult['message'] ?? 'Unknown error',
-        );
+      if (!deviceResult['success'] || deviceResult['data'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(deviceResult['message'] ?? 'Invalid activation code'),
@@ -108,25 +94,35 @@ class _ActivationFormState extends State<ActivationForm> {
         );
         setState(() {
           _isLoading = false;
+          _loadingMessage = '';
         });
         return;
       }
 
       final deviceId = deviceResult['data']['deviceId'];
-      _debugPrintData('✅ Device ID found', deviceId);
+      if (deviceId == null || deviceId <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid device ID received'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+          _loadingMessage = '';
+        });
+        return;
+      }
 
-      _debugPrint('📱 Step 2: Getting challenge from Payroll System...');
-      _debugPrintData('Device ID for challenge', deviceId);
+      setState(() {
+        _loadingMessage = 'Retrieving security challenge...';
+      });
 
+      // Step 2: Get challenge
       final challengeResult = await apiService.getChallenge(deviceId: deviceId);
       _debugPrintData('Challenge Result', challengeResult);
 
-      if (!challengeResult['success']) {
-        _debugPrint('❌ ERROR: Failed to get challenge');
-        _debugPrintData(
-          'Error Message',
-          challengeResult['message'] ?? 'Unknown error',
-        );
+      if (!challengeResult['success'] || challengeResult['data'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -137,20 +133,35 @@ class _ActivationFormState extends State<ActivationForm> {
         );
         setState(() {
           _isLoading = false;
+          _loadingMessage = '';
         });
         return;
       }
 
       final challenge = challengeResult['data']['challenge'];
-      _debugPrintData('✅ Challenge received', challenge);
+      if (challenge == null || challenge.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Empty challenge received'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+          _loadingMessage = '';
+        });
+        return;
+      }
 
-      // Get private key from GLOBAL storage
-      _debugPrint('📱 Step 3: Getting private key from global storage...');
+      setState(() {
+        _loadingMessage = 'Signing challenge with device key...';
+      });
+
+      // Get private key
       final tempKeys = await storage.getTemporaryKeysGlobal();
       _debugPrintData('Temporary Keys (Global)', tempKeys);
 
       if (tempKeys == null || tempKeys['privateKey'] == null) {
-        _debugPrint('❌ ERROR: Private key not found in global storage');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -161,26 +172,39 @@ class _ActivationFormState extends State<ActivationForm> {
         );
         setState(() {
           _isLoading = false;
+          _loadingMessage = '';
         });
         return;
       }
 
-      _debugPrint('✅ Private key found');
-
       // Sign challenge
-      _debugPrint('📱 Step 4: Signing challenge with private key...');
-      final cryptoService = CryptoService();
-      final signature = cryptoService.signChallenge(
-        challenge,
-        tempKeys['privateKey']!,
-      );
-      _debugPrintData('✅ Challenge signed', signature);
+      String signature;
+      try {
+        signature = CryptoService.signChallenge(
+          challenge,
+          tempKeys['privateKey']!,
+        );
+        _debugPrintData('Signature generated', signature);
+      } catch (e) {
+        _debugPrint('❌ Signing failed: ${e.toString()}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Signing error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+          _loadingMessage = '';
+        });
+        return;
+      }
 
-      // Send signature
-      _debugPrint('📱 Step 5: Sending signature to Payroll System...');
-      _debugPrintData('Signature', signature);
-      _debugPrintData('Device ID', deviceId);
+      setState(() {
+        _loadingMessage = 'Sending signed response...';
+      });
 
+      // Verify signature
       final verifyResult = await apiService.verifySignature(
         deviceId: deviceId,
         signature: signature,
@@ -189,53 +213,41 @@ class _ActivationFormState extends State<ActivationForm> {
 
       setState(() {
         _isLoading = false;
+        _loadingMessage = '';
       });
 
-      if (verifyResult['success']) {
-        _debugPrint('✅✅✅ DEVICE ACTIVATED SUCCESSFULLY! ✅✅✅');
+      if (verifyResult['success'] && verifyResult['data'] != null) {
         final data = verifyResult['data'];
-        _debugPrintData('Device Token', data['deviceToken']);
-        _debugPrintData('Secret Key', data['secretKey']);
 
-        // Store credentials globally
-        await storage.saveDeviceCredentialsGlobal(
-          data['deviceToken'] ?? '',
-          data['secretKey'] ?? '',
-        );
-        await storage.markDeviceActiveGlobal();
-
-        // ✅ Save installation ID permanently
-        if (tempKeys != null && tempKeys['installationId'] != null) {
-          await storage.saveInstallationIdGlobal(tempKeys['installationId']!);
-          _debugPrint(
-            '✅ Permanent installation ID updated to activated ID: ${tempKeys['installationId']}',
+        // Validate data before storing
+        final deviceToken = data['deviceToken'] ?? '';
+        final secretKey = data['secretKey'] ?? '';
+        if (deviceToken.isEmpty || secretKey.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Activation succeeded but missing device credentials.',
+              ),
+              backgroundColor: Colors.red,
+            ),
           );
+          return;
         }
 
-        // ✅ Set offline registration flag – this hides the "Register Device" button
+        await storage.saveDeviceCredentialsGlobal(deviceToken, secretKey);
+        await storage.markDeviceActiveGlobal();
+
+        if (tempKeys['installationId'] != null) {
+          await storage.saveInstallationIdGlobal(tempKeys['installationId']!);
+        }
+
         await storage.setDeviceRegisteredOffline(true);
 
-        _debugPrint('✅ Device credentials stored globally');
-        _debugPrint('✅ Device marked as ACTIVE and TRUSTED');
-        _debugPrint('✅ Offline registration flag set to true');
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('activation_code', code);
-        await prefs.setInt('device_id', deviceId);
-
-        _debugPrint(
-          '🎉🎉🎉 ACTIVATION COMPLETE! NAVIGATING TO SUCCESS SCREEN 🎉🎉🎉',
-        );
-
+        _debugPrint('✅ Activation complete, navigating to success screen.');
         if (mounted) {
           context.go(AppRouter.activationSuccess);
         }
       } else {
-        _debugPrint('❌❌❌ SIGNATURE VERIFICATION FAILED ❌❌❌');
-        _debugPrintData(
-          'Error Message',
-          verifyResult['message'] ?? 'Unknown error',
-        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -245,14 +257,12 @@ class _ActivationFormState extends State<ActivationForm> {
           ),
         );
       }
-    } catch (e) {
-      _debugPrint('💥💥💥 EXCEPTION CAUGHT 💥💥💥');
-      _debugPrintData('Error Type', e.runtimeType);
-      _debugPrintData('Error Message', e.toString());
-      _debugPrintData('Stack Trace', StackTrace.current);
-
+    } catch (e, stackTrace) {
+      _debugPrint('💥 EXCEPTION: ${e.toString()}');
+      _debugPrint('Stack trace: $stackTrace');
       setState(() {
         _isLoading = false;
+        _loadingMessage = '';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -419,13 +429,25 @@ class _ActivationFormState extends State<ActivationForm> {
             ),
           ),
           child: _isLoading
-              ? const SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _loadingMessage.isNotEmpty
+                          ? _loadingMessage
+                          : 'Verifying...',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
                 )
               : const Text('Activate Device'),
         ),

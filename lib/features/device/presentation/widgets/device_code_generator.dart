@@ -7,6 +7,7 @@ import 'package:android_id/android_id.dart';
 import 'package:uuid/uuid.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
+import 'package:payroll_soft_token_app/core/crypto/crypto_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DeviceCodeGenerator extends StatefulWidget {
@@ -43,9 +44,15 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         androidId = androidInfo.id;
       }
 
+      // ✅ Generate RSA key pair – no cast needed
+      final keyPair = CryptoService.generateRSAKeyPair();
+      final publicKeyPEM = CryptoService.exportPublicKeyToPEM(
+        keyPair.publicKey,
+      );
+      final privateKeyPEM = CryptoService.exportPrivateKeyToPEM(
+        keyPair.privateKey,
+      );
       final installationId = const Uuid().v4();
-      final publicKey = _generatePublicKey();
-      final privateKey = _generatePrivateKey();
       final serialNumber = androidInfo.serialNumber ?? 'Unknown';
 
       final deviceCodeData = {
@@ -53,7 +60,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         'device_model': androidInfo.model,
         'serial_number': serialNumber,
         'installation_id': installationId,
-        'public_key': publicKey,
+        'public_key': publicKeyPEM,
         'brand': androidInfo.brand,
         'manufacturer': androidInfo.manufacturer,
         'timestamp': DateTime.now().toIso8601String(),
@@ -69,74 +76,57 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         _isCopied = false;
       });
 
-      // ✅ Save keys globally (no login required)
+      // ✅ Save keys globally
       final storage = await StorageService.getInstance();
       await storage.saveTemporaryKeysGlobal(
         installationId,
-        publicKey,
-        privateKey,
+        publicKeyPEM,
+        privateKeyPEM,
       );
 
-      // ✅ Save installation ID permanently ONLY if not already set
+      // Save permanent installation ID
       final existingId = await storage.getInstallationIdGlobal();
       if (existingId == null) {
         await storage.saveInstallationIdGlobal(installationId);
-        print(
-          '✅ Permanent installation ID saved for first time: $installationId',
-        );
-      } else {
-        print(
-          'ℹ️ Permanent installation ID already exists: $existingId (not overwritten)',
-        );
       }
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('device_code_global', codeString);
 
-      _showSnackBar(
-        'Device code generated! Copy and paste in Payroll System.',
-        Colors.green,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Device code generated! Copy and paste in Payroll System.',
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
+        ),
       );
     } catch (e) {
       setState(() {
         _deviceCode = 'Error: ${e.toString()}';
         _isGenerating = false;
       });
-      _showSnackBar('Error generating device code', Colors.red);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error generating device code: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
-  }
-
-  String _generatePublicKey() {
-    final uuid1 = const Uuid().v4().replaceAll('-', '');
-    final uuid2 = const Uuid().v4().replaceAll('-', '');
-    return 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC'
-        '${uuid1.substring(0, 16)}'
-        '${uuid2.substring(0, 16)}'
-        'wIDAQAB';
-  }
-
-  String _generatePrivateKey() {
-    final uuid = const Uuid().v4().replaceAll('-', '');
-    return 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC$uuid';
-  }
-
-  void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        duration: const Duration(seconds: 4),
-      ),
-    );
   }
 
   Future<void> _copyToClipboard() async {
     if (_deviceCode.isNotEmpty) {
       await Clipboard.setData(ClipboardData(text: _deviceCode));
       setState(() => _isCopied = true);
-      _showSnackBar(
-        'Device code copied! Paste it in Payroll System.',
-        Colors.green,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Device code copied! Paste it in Payroll System.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
+        ),
       );
     }
   }

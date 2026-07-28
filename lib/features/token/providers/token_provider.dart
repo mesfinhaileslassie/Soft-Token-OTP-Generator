@@ -37,7 +37,6 @@ class TokenProvider extends ChangeNotifier {
     try {
       final storage = await StorageService.getInstance();
 
-      // First check if device is active globally
       final isActiveGlobal = await storage.isDeviceActiveGlobal();
       if (isActiveGlobal) {
         final creds = await storage.getDeviceCredentialsGlobal();
@@ -51,7 +50,6 @@ class TokenProvider extends ChangeNotifier {
         }
       }
 
-      // Fallback to user-specific (if logged in)
       final session = await storage.getSession();
       if (session != null && session['username'] != null) {
         final username = session['username'];
@@ -101,13 +99,12 @@ class TokenProvider extends ChangeNotifier {
     try {
       final storage = await StorageService.getInstance();
 
-      // Try to get secret key from global storage first
+      // Get secret key
       String? secretKey;
       final globalCreds = await storage.getDeviceCredentialsGlobal();
       if (globalCreds != null && globalCreds['secretKey'] != null) {
         secretKey = globalCreds['secretKey'];
       } else {
-        // Fallback to user-specific
         final session = await storage.getSession();
         if (session != null && session['username'] != null) {
           final userCreds = await storage.getDeviceCredentials(
@@ -127,46 +124,34 @@ class TokenProvider extends ChangeNotifier {
         return;
       }
 
-      // Generate token using secretKey (same algorithm as backend)
+      // Calculate counter
       final timeInSeconds =
           DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
       final counter = timeInSeconds ~/ 30;
 
-      // ---- NEW: Send counter to backend ----
+      // Send counter to backend – fire-and-forget with timeout
       String? installationId;
       final globalKeys = await storage.getTemporaryKeysGlobal();
       if (globalKeys != null && globalKeys['installationId'] != null) {
         installationId = globalKeys['installationId'];
       } else {
-        // Fallback to user-specific
         final session = await storage.getSession();
         if (session != null && session['username'] != null) {
           installationId = await storage.getInstallationId(session['username']);
         }
       }
       if (installationId != null) {
-        try {
-          final apiService = ApiService();
-          await apiService.storeCounter(
-            installationId: installationId,
-            counter: counter,
-          );
-          print(
-            '✅ Counter $counter sent to backend for device $installationId',
-          );
-        } catch (e) {
-          print('⚠️ Failed to send counter to backend: ${e.toString()}');
-          // Continue anyway – the backend will fall back to time-based validation
-        }
+        // Non-blocking: don't await, just fire and log errors
+        final apiService = ApiService();
+        apiService
+            .storeCounter(installationId: installationId, counter: counter)
+            .timeout(const Duration(seconds: 3))
+            .catchError((e) => print('⚠️ Failed to sync counter: $e'));
       } else {
         print('⚠️ Installation ID not found, cannot store counter');
       }
 
-      // Continue with OTP generation (unchanged)
-      print('🔑 SECRET KEY: $secretKey');
-      print('⏰ Flutter UTC Time: ${DateTime.now().toUtc()}');
-      print('🔄 Flutter Counter: $counter');
-
+      // Generate OTP immediately
       final combined = '$secretKey:$counter';
       final bytes = utf8.encode(combined);
       final hash = sha256.convert(bytes);
@@ -183,8 +168,7 @@ class TokenProvider extends ChangeNotifier {
       }
       tokenValue = tokenValue.substring(0, 6);
 
-      print('🎫 FLUTTER TOKEN: $tokenValue');
-
+      // Update UI
       setState(() {
         _token = tokenValue;
         _hasToken = true;
