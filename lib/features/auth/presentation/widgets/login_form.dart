@@ -1,6 +1,8 @@
+// lib/features/auth/presentation/widgets/login_form.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/utils/validators.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
@@ -30,7 +32,18 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-  // ---- UNCHANGED LOGIC ----
+  /// Check if the device has internet connectivity by resolving the hostname.
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup(
+        'radial-settle-docile.ngrok-free.dev',
+      ).timeout(const Duration(seconds: 3));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _handleLogin() async {
     if (_formKey.currentState?.validate() ?? false) {
       FocusScope.of(context).unfocus();
@@ -51,18 +64,17 @@ class _LoginFormState extends State<LoginForm> {
       }
 
       // 2️⃣ Check connectivity
-      bool hasInternet = false;
-      try {
-        await Future.delayed(const Duration(seconds: 1), () => true);
-        hasInternet = true;
-      } catch (_) {}
+      final hasInternet = await _hasInternet();
 
       if (!hasInternet) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No internet connection and no stored credentials.'),
+            content: Text(
+              'No internet connection and no stored credentials. Please connect to the internet to login.',
+            ),
             backgroundColor: Colors.orange,
+            duration: Duration(seconds: 4),
           ),
         );
         return;
@@ -117,7 +129,10 @@ class _LoginFormState extends State<LoginForm> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'Login failed'),
+              content: Text(
+                result['message'] ??
+                    'Login failed. Invalid username or password.',
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -125,29 +140,28 @@ class _LoginFormState extends State<LoginForm> {
         }
       } catch (e) {
         print('Login error: $e');
+        String errorMessage = 'Something went wrong. Please try again.';
         if (e is SocketException ||
             e.toString().contains('Failed host lookup')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'No internet connection. Please connect to the internet to login.',
-              ),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${e.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          errorMessage = 'No internet connection. Please check your network.';
+        } else if (e is TimeoutException) {
+          errorMessage = 'Connection timeout. Please try again.';
+        } else if (e.toString().contains('401') ||
+            e.toString().contains('403')) {
+          errorMessage =
+              'Invalid credentials. Please check your username and password.';
         }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
         setState(() => _isLoading = false);
       }
     }
   }
-  // ---- END UNCHANGED LOGIC ----
 
   Widget _fieldLabel(String text) {
     return Padding(
