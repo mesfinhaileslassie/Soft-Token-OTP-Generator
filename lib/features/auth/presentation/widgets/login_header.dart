@@ -11,11 +11,8 @@ class LoginHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Shield badge sits centered on the red/white boundary.
         const _ShieldBadge(),
-        const SizedBox(height: 18),
-
-        // Title
+        const SizedBox(height: 14),
         const Text(
           'Welcome Back',
           style: TextStyle(
@@ -25,9 +22,7 @@ class LoginHeader extends StatelessWidget {
             letterSpacing: 0.2,
           ),
         ),
-        const SizedBox(height: 8),
-
-        // Subtitle
+        const SizedBox(height: 6),
         const Text(
           'Please login to continue',
           style: TextStyle(
@@ -47,21 +42,20 @@ class _ShieldBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 116,
-      height: 116,
+      width: 100,
+      height: 100,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // White fill so the red banner doesn't show through the outline.
-          const Icon(Icons.shield, size: 116, color: Colors.white),
-          Icon(Icons.shield_outlined, size: 116, color: AppTheme.primaryColor),
+          const Icon(Icons.shield, size: 100, color: Colors.white),
+          Icon(Icons.shield_outlined, size: 100, color: AppTheme.primaryColor),
           Padding(
-            padding: const EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.only(top: 8),
             child: Text(
               'Soft\nToken',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 height: 1.2,
                 color: const Color(0xFF1A1A1A),

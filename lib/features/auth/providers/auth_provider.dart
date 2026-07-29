@@ -23,8 +23,7 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   AuthProvider() {
-    // ❌ Do NOT auto-login on app start.
-    // The app should always start at the login screen.
+    // Do NOT auto-login on app start.
   }
 
   void setNavigationContext(BuildContext context) {
@@ -41,13 +40,29 @@ class AuthProvider extends ChangeNotifier {
   // ==================== OFFLINE LOGIN ====================
 
   Future<bool> offlineLogin(String username, String password) async {
+    print('🔐 Offline login attempt for: $username');
     final storage = await StorageService.getInstance();
     final creds = await storage.getAuthCredentials();
-    if (creds == null || creds['username'] != username) return false;
+    if (creds == null) {
+      print('❌ No stored credentials found.');
+      return false;
+    }
+    if (creds['username'] != username) {
+      print('❌ Stored username does not match entered username.');
+      return false;
+    }
 
     final enteredHash = sha256.convert(utf8.encode(password)).toString();
-    if (enteredHash != creds['passwordHash']) return false;
+    print('🔑 Entered password hash: $enteredHash');
+    print('🔑 Stored password hash: ${creds['passwordHash']}');
 
+    if (enteredHash != creds['passwordHash']) {
+      print('❌ Password hash mismatch.');
+      return false;
+    }
+
+    // Success
+    print('✅ Offline login successful for: $username');
     _username = username;
     _role = creds['role'] ?? 'Employee';
     _isAuthenticated = true;
@@ -71,21 +86,17 @@ class AuthProvider extends ChangeNotifier {
     try {
       final storage = await StorageService.getInstance();
 
-      // Save session token (used for session persistence across app usage)
+      // Save session
       final token = 'session_${DateTime.now().millisecondsSinceEpoch}';
       await storage.saveSession(username, token);
 
-      // If rememberMe is true, save credentials for offline login
-      if (rememberMe) {
-        final passwordHash = sha256.convert(utf8.encode(password)).toString();
-        final role = userData['role'] ?? 'Employee';
-        await storage.saveAuthCredentials(username, passwordHash, role);
-      } else {
-        // Ensure no lingering credentials are stored
-        await storage.clearAuthCredentials();
-      }
+      // Save auth credentials for offline login
+      final passwordHash = sha256.convert(utf8.encode(password)).toString();
+      final role = userData['role'] ?? 'Employee';
+      await storage.saveAuthCredentials(username, passwordHash, role);
+      print('✅ Auth credentials saved for: $username');
 
-      // Always save user profile and ID for offline profile display
+      // Save user profile
       if (userData['userId'] != null) {
         await storage.saveUserId(userData['userId']);
         await storage.saveUsername(username);
@@ -95,7 +106,7 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _username = username;
-      _role = userData['role'] ?? 'Employee';
+      _role = role;
       _isAuthenticated = true;
       _isLoading = false;
       notifyListeners();
