@@ -14,6 +14,7 @@ class SoftTokenApp extends StatelessWidget {
       title: 'Soft Token',
       theme: ThemeData.light(),
       routerConfig: AppRouter.router(authProvider: authProvider),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
