@@ -6,10 +6,7 @@ import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 class ApiService {
   static final ApiService _instance = ApiService._internal();
 
-  // ════════════════════════════════════════════════
-  //  REPLACE WITH YOUR NGROK URL
-  // ════════════════════════════════════════════════
-  String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
+String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
 
   factory ApiService() {
     return _instance;

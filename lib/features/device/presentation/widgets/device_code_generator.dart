@@ -9,6 +9,7 @@ import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 import 'package:payroll_soft_token_app/core/crypto/crypto_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pointycastle/asymmetric/rsa.dart';
 
 class DeviceCodeGenerator extends StatefulWidget {
   const DeviceCodeGenerator({super.key});
@@ -44,21 +45,16 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         androidId = androidInfo.id;
       }
 
-      // ✅ Generate RSA key pair – no cast needed
+      // Generate RSA key pair
       final keyPair = CryptoService.generateRSAKeyPair();
-      final publicKeyPEM = CryptoService.exportPublicKeyToPEM(
-        keyPair.publicKey,
-      );
-      final privateKeyPEM = CryptoService.exportPrivateKeyToPEM(
-        keyPair.privateKey,
-      );
+      final publicKeyPEM = CryptoService.exportPublicKeyToPEM(keyPair.publicKey);
+      final privateKeyPEM = CryptoService.exportPrivateKeyToPEM(keyPair.privateKey);
       final installationId = const Uuid().v4();
-      final serialNumber = androidInfo.serialNumber ?? 'Unknown';
 
       final deviceCodeData = {
         'android_id': androidId,
         'device_model': androidInfo.model,
-        'serial_number': serialNumber,
+        // 'serial_number' removed – not accessible on modern Android
         'installation_id': installationId,
         'public_key': publicKeyPEM,
         'brand': androidInfo.brand,
@@ -66,9 +62,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         'timestamp': DateTime.now().toIso8601String(),
       };
 
-      final codeString = const JsonEncoder.withIndent(
-        '  ',
-      ).convert(deviceCodeData);
+      final codeString = const JsonEncoder.withIndent('  ').convert(deviceCodeData);
 
       setState(() {
         _deviceCode = codeString;
@@ -76,13 +70,9 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         _isCopied = false;
       });
 
-      // ✅ Save keys globally
+      // Save keys globally
       final storage = await StorageService.getInstance();
-      await storage.saveTemporaryKeysGlobal(
-        installationId,
-        publicKeyPEM,
-        privateKeyPEM,
-      );
+      await storage.saveTemporaryKeysGlobal(installationId, publicKeyPEM, privateKeyPEM);
 
       // Save permanent installation ID
       final existingId = await storage.getInstallationIdGlobal();
@@ -95,9 +85,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Device code generated! Copy and paste in Payroll System.',
-          ),
+          content: Text('Device code generated! Copy and paste in Payroll System.'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 4),
         ),
