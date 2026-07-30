@@ -90,6 +90,8 @@ class _LoginFormState extends State<LoginForm> {
 
         if (result['success']) {
           final data = result['data'];
+          final token = data['token'] ?? ''; // ✅ Extract the real JWT
+
           final profile = {
             'userId': data['userId'],
             'username': data['username'],
@@ -103,6 +105,7 @@ class _LoginFormState extends State<LoginForm> {
             password: password,
             rememberMe: true,
             userData: profile,
+            token: token, // ✅ Pass the real token
           );
           if (data['userId'] != null) {
             final profileResult = await apiService.getUserProfile(

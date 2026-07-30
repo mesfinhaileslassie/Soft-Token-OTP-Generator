@@ -6,7 +6,7 @@ import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 class ApiService {
   static final ApiService _instance = ApiService._internal();
 
-String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
+  String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
 
   factory ApiService() {
     return _instance;
@@ -18,6 +18,18 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
     final storage = await StorageService.getInstance();
     _baseUrl = await storage.getApiBaseUrl();
     return _baseUrl;
+  }
+
+  /// Helper to get Authorization header
+  Future<Map<String, String>> _getHeaders() async {
+    final storage = await StorageService.getInstance();
+    final session = await storage.getSession();
+    final token = session?['token'] ?? '';
+    return {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
   }
 
   // ==================== AUTH ENDPOINTS ====================
@@ -105,12 +117,10 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/auth/change-password');
 
+      final headers = await _getHeaders();
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers: headers,
         body: jsonEncode({
           'userId': userId,
           'currentPassword': currentPassword,
@@ -140,13 +150,8 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/users/$userId');
 
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-      );
+      final headers = await _getHeaders();
+      final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -165,7 +170,6 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
 
   // ==================== DEVICE ENDPOINTS ====================
 
-  /// Register a device with the Payroll System
   Future<Map<String, dynamic>> registerDevice({
     required String deviceCode,
     required String deviceName,
@@ -174,12 +178,10 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/register');
 
+      final headers = await _getHeaders();
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers: headers,
         body: jsonEncode({'deviceCode': deviceCode, 'deviceName': deviceName}),
       );
 
@@ -198,7 +200,6 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
     }
   }
 
-  /// Get Device ID by Activation Code
   Future<Map<String, dynamic>> getDeviceIdByActivationCode(
     String activationCode,
   ) async {
@@ -206,13 +207,8 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/get-device-id/$activationCode');
 
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-      );
+      final headers = await _getHeaders();
+      final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -225,7 +221,6 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
     }
   }
 
-  /// Activate device and get challenge
   Future<Map<String, dynamic>> activateDevice({
     required int deviceId,
     required String activationCode,
@@ -234,12 +229,10 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/activate');
 
+      final headers = await _getHeaders();
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers: headers,
         body: jsonEncode({
           'deviceId': deviceId,
           'activationCode': activationCode,
@@ -261,19 +254,13 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
     }
   }
 
-  /// Get challenge
   Future<Map<String, dynamic>> getChallenge({required int deviceId}) async {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/$deviceId/challenge');
 
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-      );
+      final headers = await _getHeaders();
+      final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -286,7 +273,6 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
     }
   }
 
-  /// Verify signature
   Future<Map<String, dynamic>> verifySignature({
     required int deviceId,
     required String signature,
@@ -295,12 +281,10 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/verify-signature');
 
+      final headers = await _getHeaders();
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers: headers,
         body: jsonEncode({'deviceId': deviceId, 'signature': signature}),
       );
 
@@ -315,7 +299,6 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
     }
   }
 
-  /// Verify OTP
   Future<Map<String, dynamic>> verifyOTP({
     required String secretKey,
     required String token,
@@ -324,12 +307,10 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/verify-otp');
 
+      final headers = await _getHeaders();
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers: headers,
         body: jsonEncode({'secretKey': secretKey, 'token': token}),
       );
 
@@ -351,17 +332,17 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/store-counter');
+
+      final headers = await _getHeaders();
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers: headers,
         body: jsonEncode({
           'installationId': installationId,
           'counter': counter,
         }),
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return {'success': true, 'data': data};
@@ -377,8 +358,6 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
     }
   }
 
-  // ==================== DEVICE REGISTRATION CHECK ====================
-
   Future<Map<String, dynamic>> checkDeviceRegistration(
     String installationId,
   ) async {
@@ -387,13 +366,10 @@ String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
       final url = Uri.parse(
         '$baseUrl/device/check-registration?installationId=$installationId',
       );
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-      );
+
+      final headers = await _getHeaders();
+      final response = await http.get(url, headers: headers);
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return {'success': true, 'data': data};

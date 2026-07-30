@@ -78,6 +78,7 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required bool rememberMe,
     required Map<String, dynamic> userData,
+    required String token, // ✅ Add this parameter
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -86,8 +87,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       final storage = await StorageService.getInstance();
 
-      // Save session
-      final token = 'session_${DateTime.now().millisecondsSinceEpoch}';
+      // ✅ Save the REAL JWT token (not a dummy one)
       await storage.saveSession(username, token);
 
       // Save auth credentials for offline login
