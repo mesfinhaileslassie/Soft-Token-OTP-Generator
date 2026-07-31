@@ -32,8 +32,14 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-  /// Check if the device has internet connectivity by resolving the hostname.
+  /// DEBUG: Always return true for internet check (bypass for testing)
   Future<bool> _hasInternet() async {
+    // For debugging, assume internet is available.
+    // In production, you can enable the real check.
+    print('🌐 Internet check: always true (debug mode)');
+    return true;
+    /* 
+    // Original check – keep if needed later:
     try {
       final result = await InternetAddress.lookup(
         'radial-settle-docile.ngrok-free.dev',
@@ -42,6 +48,7 @@ class _LoginFormState extends State<LoginForm> {
     } catch (_) {
       return false;
     }
+    */
   }
 
   Future<void> _handleLogin() async {
@@ -53,20 +60,20 @@ class _LoginFormState extends State<LoginForm> {
       final password = _passwordController.text;
       final authProvider = context.read<AuthProvider>();
 
+      print('🔐 Starting login for: $username');
+
       // 1️⃣ Try offline login first
       final offlineError = await authProvider.offlineLogin(username, password);
       if (offlineError == null) {
-        // Offline login succeeded
+        print('✅ Offline login succeeded');
         if (mounted) setState(() => _isLoading = false);
         return;
       }
+      print('❌ Offline login failed: $offlineError');
 
-      // 2️⃣ If offline login failed with a specific error, show it.
-      // But if the error is "No stored credentials", we can try online if internet exists.
-      // For other errors (username mismatch, password mismatch), show immediately.
+      // 2️⃣ If offline login failed with "No stored credentials", try online.
       if (offlineError !=
           'No stored credentials. Please connect to the internet to login.') {
-        // Other offline errors – show and stop.
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -78,8 +85,9 @@ class _LoginFormState extends State<LoginForm> {
         return;
       }
 
-      // 3️⃣ No stored credentials – check connectivity
+      // 3️⃣ No stored credentials – check connectivity (debug always true)
       final hasInternet = await _hasInternet();
+      print('🌐 Internet available: $hasInternet');
       if (!hasInternet) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -95,14 +103,20 @@ class _LoginFormState extends State<LoginForm> {
       }
 
       // 4️⃣ Online login
+      print('📡 Attempting online login for: $username');
       try {
         final apiService = ApiService();
+        final baseUrl = await apiService.getBaseUrl();
+        print('📡 API base URL: $baseUrl');
+
         final result = await apiService.loginUser(
           username: username,
           password: password,
         );
+        print('📡 Login response: $result');
 
         if (result['success']) {
+          print('✅ Online login succeeded');
           final data = result['data'];
           final token = data['token'] ?? '';
           final profile = {
@@ -143,6 +157,7 @@ class _LoginFormState extends State<LoginForm> {
             }
           }
         } else {
+          print('❌ Online login failed: ${result['message']}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -154,8 +169,9 @@ class _LoginFormState extends State<LoginForm> {
           );
           setState(() => _isLoading = false);
         }
-      } catch (e) {
-        print('Login error: $e');
+      } catch (e, stack) {
+        print('💥 Login exception: $e');
+        print('StackTrace: $stack');
         String errorMessage = 'Something went wrong. Please try again.';
         if (e is SocketException ||
             e.toString().contains('Failed host lookup')) {
@@ -166,6 +182,9 @@ class _LoginFormState extends State<LoginForm> {
             e.toString().contains('403')) {
           errorMessage =
               'Invalid credentials. Please check your username and password.';
+        } else if (e.toString().contains('404')) {
+          errorMessage =
+              'API endpoint not found. Please check the API URL in Debug Storage.';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
