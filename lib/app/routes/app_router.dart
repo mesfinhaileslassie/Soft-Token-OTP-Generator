@@ -1,8 +1,8 @@
 ﻿// lib/app/routes/app_router.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/features/auth/presentation/screens/login_screen.dart';
-import 'package:payroll_soft_token_app/features/auth/presentation/screens/register_screen.dart';
 import 'package:payroll_soft_token_app/features/home/presentation/screens/home_screen.dart';
 import 'package:payroll_soft_token_app/features/device/presentation/screens/device_registration_screen.dart';
 import 'package:payroll_soft_token_app/features/activation/presentation/screens/activation_screen.dart';
@@ -15,7 +15,7 @@ import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dar
 
 class AppRouter {
   static const String login = '/login';
-  static const String register = '/register';
+  // static const String register = '/register';  // ❌ REMOVED
   static const String home = '/home';
   static const String deviceRegistration = '/device-registration';
   static const String activation = '/activation';
@@ -31,7 +31,7 @@ class AppRouter {
       redirect: (context, state) {
         final isAuthenticated = authProvider.isAuthenticated;
         final isLoginRoute = state.uri.path == login;
-        final isRegisterRoute = state.uri.path == register;
+        // final isRegisterRoute = state.uri.path == register;  // ❌ REMOVED
         final isDebugRoute = state.uri.path == debugStorage;
         final isDeviceRegistrationRoute = state.uri.path == deviceRegistration;
         final isActivationRoute = state.uri.path == activation;
@@ -39,7 +39,7 @@ class AppRouter {
 
         // Allow these routes without authentication
         if (isLoginRoute ||
-            isRegisterRoute ||
+            // isRegisterRoute ||  // ❌ REMOVED
             isDebugRoute ||
             isDeviceRegistrationRoute ||
             isActivationRoute ||
@@ -58,11 +58,6 @@ class AppRouter {
           path: login,
           name: 'login',
           builder: (context, state) => const LoginScreen(),
-        ),
-        GoRoute(
-          path: register,
-          name: 'register',
-          builder: (context, state) => const RegisterScreen(),
         ),
         GoRoute(
           path: home,
