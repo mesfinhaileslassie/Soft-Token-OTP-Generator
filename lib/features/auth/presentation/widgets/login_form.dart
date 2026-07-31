@@ -54,18 +54,32 @@ class _LoginFormState extends State<LoginForm> {
       final authProvider = context.read<AuthProvider>();
 
       // 1️⃣ Try offline login first
-      final offlineSuccess = await authProvider.offlineLogin(
-        username,
-        password,
-      );
-      if (offlineSuccess) {
+      final offlineError = await authProvider.offlineLogin(username, password);
+      if (offlineError == null) {
+        // Offline login succeeded
         if (mounted) setState(() => _isLoading = false);
         return;
       }
 
-      // 2️⃣ Check connectivity
-      final hasInternet = await _hasInternet();
+      // 2️⃣ If offline login failed with a specific error, show it.
+      // But if the error is "No stored credentials", we can try online if internet exists.
+      // For other errors (username mismatch, password mismatch), show immediately.
+      if (offlineError !=
+          'No stored credentials. Please connect to the internet to login.') {
+        // Other offline errors – show and stop.
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(offlineError),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
 
+      // 3️⃣ No stored credentials – check connectivity
+      final hasInternet = await _hasInternet();
       if (!hasInternet) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -80,7 +94,7 @@ class _LoginFormState extends State<LoginForm> {
         return;
       }
 
-      // 3️⃣ Online login
+      // 4️⃣ Online login
       try {
         final apiService = ApiService();
         final result = await apiService.loginUser(
@@ -90,8 +104,7 @@ class _LoginFormState extends State<LoginForm> {
 
         if (result['success']) {
           final data = result['data'];
-          final token = data['token'] ?? ''; // ✅ Extract the real JWT
-
+          final token = data['token'] ?? '';
           final profile = {
             'userId': data['userId'],
             'username': data['username'],
@@ -105,7 +118,7 @@ class _LoginFormState extends State<LoginForm> {
             password: password,
             rememberMe: true,
             userData: profile,
-            token: token, // ✅ Pass the real token
+            token: token,
           );
           if (data['userId'] != null) {
             final profileResult = await apiService.getUserProfile(

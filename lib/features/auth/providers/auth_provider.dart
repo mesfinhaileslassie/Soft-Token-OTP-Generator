@@ -39,17 +39,22 @@ class AuthProvider extends ChangeNotifier {
 
   // ==================== OFFLINE LOGIN ====================
 
-  Future<bool> offlineLogin(String username, String password) async {
+  /// Returns:
+  /// - `null` if offline login succeeds.
+  /// - A descriptive error message if offline login fails.
+  Future<String?> offlineLogin(String username, String password) async {
     print('🔐 Offline login attempt for: $username');
     final storage = await StorageService.getInstance();
     final creds = await storage.getAuthCredentials();
+
     if (creds == null) {
       print('❌ No stored credentials found.');
-      return false;
+      return 'No stored credentials. Please connect to the internet to login.';
     }
+
     if (creds['username'] != username) {
       print('❌ Stored username does not match entered username.');
-      return false;
+      return 'Username not found locally. Please connect to the internet.';
     }
 
     final enteredHash = sha256.convert(utf8.encode(password)).toString();
@@ -58,7 +63,7 @@ class AuthProvider extends ChangeNotifier {
 
     if (enteredHash != creds['passwordHash']) {
       print('❌ Password hash mismatch.');
-      return false;
+      return 'Invalid password. Please try again.';
     }
 
     // Success
@@ -68,7 +73,7 @@ class AuthProvider extends ChangeNotifier {
     _isAuthenticated = true;
     notifyListeners();
     _navigateToTokenScreen();
-    return true;
+    return null; // success
   }
 
   // ==================== ONLINE LOGIN ====================
@@ -78,7 +83,7 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required bool rememberMe,
     required Map<String, dynamic> userData,
-    required String token, // ✅ Add this parameter
+    required String token,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -87,16 +92,13 @@ class AuthProvider extends ChangeNotifier {
     try {
       final storage = await StorageService.getInstance();
 
-      // ✅ Save the REAL JWT token (not a dummy one)
       await storage.saveSession(username, token);
 
-      // Save auth credentials for offline login
       final passwordHash = sha256.convert(utf8.encode(password)).toString();
       final role = userData['role'] ?? 'Employee';
       await storage.saveAuthCredentials(username, passwordHash, role);
       print('✅ Auth credentials saved for: $username');
 
-      // Save user profile
       if (userData['userId'] != null) {
         await storage.saveUserId(userData['userId']);
         await storage.saveUsername(username);
