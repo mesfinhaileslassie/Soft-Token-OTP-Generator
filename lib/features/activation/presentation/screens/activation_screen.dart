@@ -16,7 +16,7 @@ class ActivationScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header with #9E0000 background - Goes behind status bar
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(top: 40, bottom: 16),

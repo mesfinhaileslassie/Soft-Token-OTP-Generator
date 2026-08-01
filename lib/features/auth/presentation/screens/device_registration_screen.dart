@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final isRegisteredOffline = await storage.isDeviceRegisteredOffline();
       if (isRegisteredOffline) {
         _isDeviceRegistered = true;
-        print('✅ Device registered (offline flag)');
+        print('Device registered (offline flag)');
         setState(() => _isLoading = false);
         return;
       }

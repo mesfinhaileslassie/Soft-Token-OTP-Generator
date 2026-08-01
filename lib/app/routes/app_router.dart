@@ -15,7 +15,7 @@ import 'package:payroll_soft_token_app/features/auth/providers/auth_provider.dar
 
 class AppRouter {
   static const String login = '/login';
-  // static const String register = '/register';  // ❌ REMOVED
+
   static const String home = '/home';
   static const String deviceRegistration = '/device-registration';
   static const String activation = '/activation';
@@ -37,9 +37,9 @@ class AppRouter {
         final isActivationRoute = state.uri.path == activation;
         final isActivationSuccessRoute = state.uri.path == activationSuccess;
 
-        // Allow these routes without authentication
+      
         if (isLoginRoute ||
-            // isRegisterRoute ||  // ❌ REMOVED
+
             isDebugRoute ||
             isDeviceRegistrationRoute ||
             isActivationRoute ||

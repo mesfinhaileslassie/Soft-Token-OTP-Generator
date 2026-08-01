@@ -69,7 +69,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         _isCopied = false;
       });
 
-      // ✅ Save keys globally (no login required)
+
       final storage = await StorageService.getInstance();
       await storage.saveTemporaryKeysGlobal(
         installationId,
@@ -77,7 +77,7 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         privateKey,
       );
 
-      // ✅ Save installation ID permanently (so it survives app restarts)
+     
       await storage.saveInstallationIdGlobal(installationId);
 
       final prefs = await SharedPreferences.getInstance();

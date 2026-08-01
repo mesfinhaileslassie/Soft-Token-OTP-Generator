@@ -10,7 +10,7 @@ class ActivationSuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Set flag when this screen is shown
+
     _setDeviceRegisteredFlag();
 
     final statusBarHeight = MediaQuery.of(context).padding.top;
@@ -19,7 +19,7 @@ class ActivationSuccessScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header with #9E0000 background — extends behind status bar
+        
           Container(
             width: double.infinity,
             padding: EdgeInsets.only(top: statusBarHeight + 16, bottom: 16),
@@ -162,15 +162,13 @@ class ActivationSuccessScreen extends StatelessWidget {
     try {
       final storage = await StorageService.getInstance();
       await storage.setDeviceRegisteredOffline(true);
-      print('✅ Device registration flag set to true (offline)');
+      print(' Device registration flag set to true (offline)');
     } catch (e) {
       print('Error setting device registered flag: $e');
     }
   }
 }
 
-/// Small sunny-icon decoration positioned around the shield,
-/// matching the scattered sun icons in the design.
 class _Sunny extends StatelessWidget {
   final double? top;
   final double? bottom;

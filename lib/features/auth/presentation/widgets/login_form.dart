@@ -32,23 +32,12 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-  /// DEBUG: Always return true for internet check (bypass for testing)
+  
   Future<bool> _hasInternet() async {
-    // For debugging, assume internet is available.
-    // In production, you can enable the real check.
+   
     print('🌐 Internet check: always true (debug mode)');
     return true;
-    /* 
-    // Original check – keep if needed later:
-    try {
-      final result = await InternetAddress.lookup(
-        'radial-settle-docile.ngrok-free.dev',
-      ).timeout(const Duration(seconds: 3));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-    */
+   
   }
 
   Future<void> _handleLogin() async {
@@ -62,7 +51,7 @@ class _LoginFormState extends State<LoginForm> {
 
       print('🔐 Starting login for: $username');
 
-      // 1️⃣ Try offline login first
+     
       final offlineError = await authProvider.offlineLogin(username, password);
       if (offlineError == null) {
         print('✅ Offline login succeeded');
@@ -71,7 +60,7 @@ class _LoginFormState extends State<LoginForm> {
       }
       print('❌ Offline login failed: $offlineError');
 
-      // 2️⃣ If offline login failed with "No stored credentials", try online.
+     
       if (offlineError !=
           'No stored credentials. Please connect to the internet to login.') {
         setState(() => _isLoading = false);
@@ -85,7 +74,7 @@ class _LoginFormState extends State<LoginForm> {
         return;
       }
 
-      // 3️⃣ No stored credentials – check connectivity (debug always true)
+     
       final hasInternet = await _hasInternet();
       print('🌐 Internet available: $hasInternet');
       if (!hasInternet) {
@@ -102,7 +91,7 @@ class _LoginFormState extends State<LoginForm> {
         return;
       }
 
-      // 4️⃣ Online login
+      
       print('📡 Attempting online login for: $username');
       try {
         final apiService = ApiService();
@@ -311,8 +300,6 @@ class _LoginFormState extends State<LoginForm> {
   }
 }
 
-/// Pill-shaped primary button matching the Figma login button —
-/// same onPressed/loading behavior as before, just restyled.
 class _LoginButton extends StatelessWidget {
   const _LoginButton({required this.isLoading, required this.onPressed});
 

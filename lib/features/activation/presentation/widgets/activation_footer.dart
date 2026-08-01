@@ -1,7 +1,6 @@
 // lib/features/activation/presentation/widgets/activation_footer.dart
 import 'package:flutter/material.dart';
 
-/// "Didn't receive the code? Resend Code" prompt, shown under the timer.
 class ResendCodeRow extends StatelessWidget {
   final VoidCallback? onResend;
 
@@ -38,8 +37,6 @@ class ResendCodeRow extends StatelessWidget {
   }
 }
 
-/// Thin divider with a small shield-check icon, used as the screen's
-/// bottom trust marker.
 class ActivationTrustDivider extends StatelessWidget {
   const ActivationTrustDivider({super.key});
 

@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 class LoginFooter extends StatelessWidget {
   const LoginFooter({super.key});
 
-  static const Color _linkColor = Color(0xFFF5A623);
-
+ 
   @override
   Widget build(BuildContext context) {
     return Column(

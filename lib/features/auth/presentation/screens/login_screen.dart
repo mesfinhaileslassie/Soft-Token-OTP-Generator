@@ -80,15 +80,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-  // ---- END UNCHANGED LOGIC ----
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.setNavigationContext(context);
 
-    // Responsive banner height: scales gently with screen width so it
-    // doesn't look oversized on small phones or squashed on tablets.
     final screenWidth = MediaQuery.of(context).size.width;
     final bannerHeight = (screenWidth * 0.34).clamp(110.0, 170.0);
 
@@ -96,8 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Plain red banner behind the status bar — matches Figma
-          // (no overlaid copy; the shield/title live in LoginHeader below).
+         
           Positioned(
             top: 0,
             left: 0,
@@ -144,9 +140,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Extracted purely for readability — same OutlinedButton, same
-/// onPressed/navigation behavior, just pill-shaped to match the new
-/// button language used across the app.
 class _RegisterDeviceButton extends StatelessWidget {
   const _RegisterDeviceButton({required this.onPressed});
 
