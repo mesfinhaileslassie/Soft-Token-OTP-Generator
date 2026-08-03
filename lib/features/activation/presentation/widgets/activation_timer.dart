@@ -1,11 +1,9 @@
-// lib/features/activation/presentation/widgets/activation_timer.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 
 class ActivationTimer extends StatefulWidget {
   final VoidCallback? onResend;
-
   const ActivationTimer({super.key, this.onResend});
 
   @override
@@ -16,7 +14,7 @@ class _ActivationTimerState extends State<ActivationTimer> {
   static const Color _pillColor = Color(0xFFFDECC8);
   static const Color _timeColor = Color(0xFFE0447B);
 
-  int _secondsRemaining = 118; // 01:58
+  int _secondsRemaining = 180; // 3 minutes
   Timer? _timer;
   bool _isExpired = false;
 
@@ -53,7 +51,7 @@ class _ActivationTimerState extends State<ActivationTimer> {
 
   void _reset() {
     setState(() {
-      _secondsRemaining = 118;
+      _secondsRemaining = 180;
       _isExpired = false;
       _timer?.cancel();
       _startTimer();

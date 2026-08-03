@@ -1,4 +1,3 @@
-// lib/features/profile/presentation/screens/change_password_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -36,7 +35,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   void initState() {
     super.initState();
-    // Purely visual: drives the password-strength meter, does not affect validation.
     _newPasswordController.addListener(_updateStrength);
   }
 
@@ -69,6 +67,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   Future<void> _handleChangePassword() async {
     if (_formKey.currentState?.validate() ?? false) {
+      // ✅ Enforce password strength
+      if (_strength == _PasswordStrength.weak ||
+          _strength == _PasswordStrength.empty) {
+        setState(() {
+          _error =
+              'Password is too weak. Please choose a stronger password (at least 8 characters, include uppercase, number, and special character).';
+        });
+        return;
+      }
+
       setState(() {
         _isLoading = true;
         _error = null;
@@ -94,15 +102,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         );
 
         if (result['success']) {
-          // ✅ Update local auth credentials (offline login)
           final username = await storage.getUsername();
           if (username != null) {
-            // Update password hash for offline login
             final newHash = sha256
                 .convert(utf8.encode(_newPasswordController.text))
                 .toString();
             await storage.updateAuthPasswordHash(newHash);
-            // Update local user map if exists
             await storage.updateUserPassword(
               username,
               _newPasswordController.text,
@@ -118,7 +123,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             _strength = _PasswordStrength.empty;
           });
 
-          // Navigate back to profile after 2 seconds
           Future.delayed(const Duration(seconds: 2), () {
             if (mounted) {
               context.go(AppRouter.profile);
@@ -144,9 +148,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth < 360 ? 16.0 : 20.0;
 
+    // Determine if the password is too weak to submit
+    final bool isPasswordValid =
+        _strength != _PasswordStrength.empty &&
+        _strength != _PasswordStrength.weak;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle
-          .light, // white status bar icons over the red header
+      value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F5F5),
         extendBodyBehindAppBar: true,
@@ -154,14 +162,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           children: [
             _Header(
               onBack: () => context.go(AppRouter.profile),
-              onLogout: () {
-                // TODO: wire this to the real auth/logout flow once available.
-                context.go(AppRouter.profile);
-              },
+              onLogout: () => context.go(AppRouter.profile),
             ),
             Expanded(
               child: SafeArea(
-                top: false, // header already handles the status bar itself
+                top: false,
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
                     horizontal: horizontalPadding,
@@ -235,19 +240,31 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                   if (value == null || value.isEmpty) {
                                     return 'Please enter a new password';
                                   }
-                                  if (value.length < 6) {
-                                    return 'Password must be at least 6 characters';
+                                  if (value.length < 8) {
+                                    return 'Password must be at least 8 characters';
                                   }
                                   return null;
                                 },
                               ),
                               const SizedBox(height: 8),
                               _PasswordStrengthMeter(strength: _strength),
+                              if (_strength == _PasswordStrength.weak ||
+                                  _strength == _PasswordStrength.empty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    'Password is too weak. Use at least 8 characters with uppercase, number, and special character.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.red.shade600,
+                                    ),
+                                  ),
+                                ),
                               const SizedBox(height: 22),
 
                               _buildPasswordField(
                                 label: 'Confirm Password',
-                                hint: 'Reenter your new password',
+                                hint: 'Re-enter your new password',
                                 controller: _confirmPasswordController,
                                 obscure: _obscureConfirm,
                                 onToggle: () => setState(
@@ -272,7 +289,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         const SizedBox(height: 24),
 
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _handleChangePassword,
+                          onPressed: (_isLoading || !isPasswordValid)
+                              ? null
+                              : _handleChangePassword,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
                             foregroundColor: Colors.white,
@@ -392,8 +411,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 }
 
 /// Red header with badge icon, title, back and logout actions.
-/// Extends behind the status bar; pads its own content down using
-/// MediaQuery so the title/actions clear the status bar icons.
 class _Header extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onLogout;
@@ -512,7 +529,7 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
-/// Purely visual segmented strength meter, driven by _calculateStrength.
+/// Visual password strength meter
 class _PasswordStrengthMeter extends StatelessWidget {
   final _PasswordStrength strength;
 
