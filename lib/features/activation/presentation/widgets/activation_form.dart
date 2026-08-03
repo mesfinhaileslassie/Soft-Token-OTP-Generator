@@ -1,4 +1,5 @@
 // lib/features/activation/presentation/widgets/activation_form.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:payroll_soft_token_app/app/routes/app_router.dart';
@@ -6,6 +7,7 @@ import 'package:payroll_soft_token_app/core/theme/app_theme.dart';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 import 'package:payroll_soft_token_app/core/services/api_service.dart';
 import 'package:payroll_soft_token_app/core/crypto/crypto_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ActivationForm extends StatefulWidget {
   const ActivationForm({super.key});
@@ -60,7 +62,6 @@ class _ActivationFormState extends State<ActivationForm> {
 
   Future<void> _handleActivate() async {
     final code = _controllers.map((c) => c.text).join();
-
     if (code.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -85,11 +86,10 @@ class _ActivationFormState extends State<ActivationForm> {
       _debugPrintData('Device Result', deviceResult);
 
       if (!deviceResult['success'] || deviceResult['data'] == null) {
+        // Show the error message from the API (which could be "Network error")
+        String errorMsg = deviceResult['message'] ?? 'Invalid activation code';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(deviceResult['message'] ?? 'Invalid activation code'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
         );
         setState(() {
           _isLoading = false;
@@ -98,7 +98,9 @@ class _ActivationFormState extends State<ActivationForm> {
         return;
       }
 
-      final deviceId = deviceResult['data']['deviceId'];
+      // Device result has a 'data' field with deviceId inside
+      final deviceData = deviceResult['data'];
+      int? deviceId = deviceData['deviceId'];
       if (deviceId == null || deviceId <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -122,13 +124,10 @@ class _ActivationFormState extends State<ActivationForm> {
       _debugPrintData('Challenge Result', challengeResult);
 
       if (!challengeResult['success'] || challengeResult['data'] == null) {
+        String errorMsg =
+            challengeResult['message'] ?? 'Failed to get challenge';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              challengeResult['message'] ?? 'Failed to get challenge',
-            ),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
         );
         setState(() {
           _isLoading = false;
@@ -217,10 +216,9 @@ class _ActivationFormState extends State<ActivationForm> {
 
       if (verifyResult['success'] && verifyResult['data'] != null) {
         final data = verifyResult['data'];
-
-        // Validate data before storing
         final deviceToken = data['deviceToken'] ?? '';
         final secretKey = data['secretKey'] ?? '';
+
         if (deviceToken.isEmpty || secretKey.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -247,13 +245,10 @@ class _ActivationFormState extends State<ActivationForm> {
           context.go(AppRouter.activationSuccess);
         }
       } else {
+        String errorMsg =
+            verifyResult['message'] ?? 'Signature verification failed';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              verifyResult['message'] ?? 'Signature verification failed',
-            ),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
         );
       }
     } catch (e, stackTrace) {
@@ -297,7 +292,6 @@ class _ActivationFormState extends State<ActivationForm> {
           style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
         ),
         const SizedBox(height: 16),
-
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -410,7 +404,6 @@ class _ActivationFormState extends State<ActivationForm> {
           ),
         ),
         const SizedBox(height: 24),
-
         ElevatedButton(
           onPressed: _isLoading ? null : _handleActivate,
           style: ElevatedButton.styleFrom(

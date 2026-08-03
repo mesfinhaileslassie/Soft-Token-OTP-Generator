@@ -1,11 +1,13 @@
 // lib/core/services/api_service.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'dart:async';
 import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
-
   String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
 
   factory ApiService() {
@@ -32,6 +34,22 @@ class ApiService {
     };
   }
 
+  /// Centralised error handler – converts exceptions into user‑friendly messages
+  Map<String, dynamic> _handleError(dynamic e, [String? defaultMessage]) {
+    String message =
+        defaultMessage ?? 'Something went wrong. Please try again.';
+    if (e is SocketException || e.toString().contains('Failed host lookup')) {
+      message = 'Network error. Please check your internet connection.';
+    } else if (e is TimeoutException) {
+      message = 'Connection timeout. Please try again.';
+    } else if (e is http.ClientException) {
+      message = 'Network error. Please check your internet connection.';
+    } else if (e.toString().contains('401') || e.toString().contains('403')) {
+      message = 'Authentication failed. Please log in again.';
+    }
+    return {'success': false, 'message': message};
+  }
+
   // ==================== AUTH ENDPOINTS ====================
 
   Future<Map<String, dynamic>> registerUser({
@@ -46,23 +64,24 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/auth/register');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: jsonEncode({
-          'username': username,
-          'email': email,
-          'password': password,
-          'firstName': firstName ?? '',
-          'lastName': lastName ?? '',
-          'phone': phone ?? '',
-          'gender': gender ?? '',
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: jsonEncode({
+              'username': username,
+              'email': email,
+              'password': password,
+              'firstName': firstName ?? '',
+              'lastName': lastName ?? '',
+              'phone': phone ?? '',
+              'gender': gender ?? '',
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -75,7 +94,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(e, 'Registration failed. Please try again.');
     }
   }
 
@@ -86,15 +105,16 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/auth/login');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: jsonEncode({'username': username, 'password': password}),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -104,7 +124,7 @@ class ApiService {
         return {'success': false, 'message': data['message'] ?? 'Login failed'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(e, 'Login failed. Please try again.');
     }
   }
 
@@ -116,17 +136,18 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/auth/change-password');
-
       final headers = await _getHeaders();
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode({
-          'userId': userId,
-          'currentPassword': currentPassword,
-          'newPassword': newPassword,
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({
+              'userId': userId,
+              'currentPassword': currentPassword,
+              'newPassword': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -139,7 +160,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(e, 'Password change failed. Please try again.');
     }
   }
 
@@ -149,9 +170,10 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/users/$userId');
-
       final headers = await _getHeaders();
-      final response = await http.get(url, headers: headers);
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -164,7 +186,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(e, 'Failed to load profile. Please try again.');
     }
   }
 
@@ -177,13 +199,17 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/register');
-
       final headers = await _getHeaders();
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode({'deviceCode': deviceCode, 'deviceName': deviceName}),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({
+              'deviceCode': deviceCode,
+              'deviceName': deviceName,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -196,7 +222,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(e, 'Device registration failed. Please try again.');
     }
   }
 
@@ -206,18 +232,31 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/get-device-id/$activationCode');
-
       final headers = await _getHeaders();
-      final response = await http.get(url, headers: headers);
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return {'success': true, 'data': data};
       } else {
-        return {'success': false, 'message': 'Device not found'};
+        // Even if the status is not 200, we try to parse the body
+        try {
+          final data = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': data['message'] ?? 'Device not found',
+          };
+        } catch (_) {
+          return {'success': false, 'message': 'Device not found'};
+        }
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(
+        e,
+        'Network error. Please check your internet connection.',
+      );
     }
   }
 
@@ -228,16 +267,17 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/activate');
-
       final headers = await _getHeaders();
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode({
-          'deviceId': deviceId,
-          'activationCode': activationCode,
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({
+              'deviceId': deviceId,
+              'activationCode': activationCode,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -250,7 +290,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(e, 'Activation failed. Please try again.');
     }
   }
 
@@ -258,9 +298,10 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/$deviceId/challenge');
-
       final headers = await _getHeaders();
-      final response = await http.get(url, headers: headers);
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -269,7 +310,10 @@ class ApiService {
         return {'success': false, 'message': 'Failed to get challenge'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(
+        e,
+        'Network error. Please check your internet connection.',
+      );
     }
   }
 
@@ -280,13 +324,14 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/verify-signature');
-
       final headers = await _getHeaders();
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode({'deviceId': deviceId, 'signature': signature}),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({'deviceId': deviceId, 'signature': signature}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -295,7 +340,10 @@ class ApiService {
         return {'success': false, 'message': 'Signature verification failed'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(
+        e,
+        'Network error. Please check your internet connection.',
+      );
     }
   }
 
@@ -306,13 +354,14 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/verify-otp');
-
       final headers = await _getHeaders();
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode({'secretKey': secretKey, 'token': token}),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({'secretKey': secretKey, 'token': token}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -321,7 +370,10 @@ class ApiService {
         return {'success': false, 'message': 'OTP verification failed'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(
+        e,
+        'Network error. Please check your internet connection.',
+      );
     }
   }
 
@@ -332,16 +384,17 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/device/store-counter');
-
       final headers = await _getHeaders();
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode({
-          'installationId': installationId,
-          'counter': counter,
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({
+              'installationId': installationId,
+              'counter': counter,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -354,7 +407,10 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(
+        e,
+        'Network error. Please check your internet connection.',
+      );
     }
   }
 
@@ -366,9 +422,10 @@ class ApiService {
       final url = Uri.parse(
         '$baseUrl/device/check-registration?installationId=$installationId',
       );
-
       final headers = await _getHeaders();
-      final response = await http.get(url, headers: headers);
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -377,7 +434,10 @@ class ApiService {
         return {'success': false, 'message': 'Failed to check registration'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return _handleError(
+        e,
+        'Network error. Please check your internet connection.',
+      );
     }
   }
 }

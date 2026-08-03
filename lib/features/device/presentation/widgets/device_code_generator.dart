@@ -1,5 +1,7 @@
 ﻿// lib/features/device/presentation/widgets/device_code_generator.dart
+
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -34,35 +36,71 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
 
     try {
       final deviceInfo = DeviceInfoPlugin();
-      final androidInfo = await deviceInfo.androidInfo;
 
-      String androidId = androidInfo.id;
-      try {
-        final androidIdPlugin = const AndroidId();
-        final id = await androidIdPlugin.getId();
-        if (id != null) androidId = id;
-      } catch (e) {
-        androidId = androidInfo.id;
+      // -------- Platform‑specific identifiers --------
+      String deviceId = ''; // will be Android ID or IDFV
+      String deviceModel = '';
+      String brand = '';
+      String manufacturer = '';
+
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        deviceModel = androidInfo.model;
+        brand = androidInfo.brand;
+        manufacturer = androidInfo.manufacturer;
+
+        // Get the Android ID (using android_id plugin, fallback to device_info_plus)
+        try {
+          final androidIdPlugin = const AndroidId();
+          final id = await androidIdPlugin.getId();
+          if (id != null) deviceId = id;
+        } catch (e) {
+          deviceId = androidInfo.id;
+        }
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        deviceModel = iosInfo.model;
+        brand = 'Apple';
+        manufacturer = 'Apple';
+
+        // Use identifierForVendor – the only stable, non‑permanent ID on iOS
+        deviceId = iosInfo.identifierForVendor ?? 'unknown-ios-device';
+      } else {
+        // Fallback for other platforms (web, macOS, etc.)
+        deviceModel = 'Unknown Device';
+        brand = 'Unknown';
+        manufacturer = 'Unknown';
+        deviceId = 'unknown-platform';
       }
 
-      // Generate RSA key pair
+      // -------- Generate RSA keys --------
       final keyPair = CryptoService.generateRSAKeyPair();
-      final publicKeyPEM = CryptoService.exportPublicKeyToPEM(keyPair.publicKey);
-      final privateKeyPEM = CryptoService.exportPrivateKeyToPEM(keyPair.privateKey);
+      final publicKeyPEM = CryptoService.exportPublicKeyToPEM(
+        keyPair.publicKey,
+      );
+      final privateKeyPEM = CryptoService.exportPrivateKeyToPEM(
+        keyPair.privateKey,
+      );
+
+      // -------- Create a unique installation ID --------
       final installationId = const Uuid().v4();
 
+      // -------- Build the device code JSON --------
+      // Important: the key 'android_id' is kept for backward compatibility
+      // with the backend. On iOS we store the IDFV there.
       final deviceCodeData = {
-        'android_id': androidId,
-        'device_model': androidInfo.model,
-        // 'serial_number' removed – not accessible on modern Android
+        'android_id': deviceId,
+        'device_model': deviceModel,
         'installation_id': installationId,
         'public_key': publicKeyPEM,
-        'brand': androidInfo.brand,
-        'manufacturer': androidInfo.manufacturer,
+        'brand': brand,
+        'manufacturer': manufacturer,
         'timestamp': DateTime.now().toIso8601String(),
       };
 
-      final codeString = const JsonEncoder.withIndent('  ').convert(deviceCodeData);
+      final codeString = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(deviceCodeData);
 
       setState(() {
         _deviceCode = codeString;
@@ -70,11 +108,15 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
         _isCopied = false;
       });
 
-      // Save keys globally
+      // -------- Persist keys globally --------
       final storage = await StorageService.getInstance();
-      await storage.saveTemporaryKeysGlobal(installationId, publicKeyPEM, privateKeyPEM);
+      await storage.saveTemporaryKeysGlobal(
+        installationId,
+        publicKeyPEM,
+        privateKeyPEM,
+      );
 
-      // Save permanent installation ID
+      // Save permanent installation ID (if not already present)
       final existingId = await storage.getInstallationIdGlobal();
       if (existingId == null) {
         await storage.saveInstallationIdGlobal(installationId);
@@ -85,7 +127,9 @@ class _DeviceCodeGeneratorState extends State<DeviceCodeGenerator> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Device code generated! Copy and paste in Payroll System.'),
+          content: Text(
+            'Device code generated! Copy and paste in Payroll System.',
+          ),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 4),
         ),
