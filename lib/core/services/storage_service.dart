@@ -1,4 +1,5 @@
 // lib/core/services/storage_service.dart
+
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -387,9 +388,10 @@ class StorageService {
   }
 
   // API Configuration
+  // ✅ CHANGED: Fallback to production server
   Future<String> getApiBaseUrl() async {
     return _preferences!.getString('api_base_url') ??
-        'https://radial-settle-docile.ngrok-free.dev/api';
+        'http://102.208.98.85:7201/api';
   }
 
   Future<void> clearAllData() async {

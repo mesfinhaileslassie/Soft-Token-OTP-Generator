@@ -4,7 +4,10 @@
         <domain includeSubdomains="true">192.168.1.10</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">radial-settle-docile.ngrok-free.dev</domain>
+        <!-- ✅ ADDED: Allow cleartext traffic to production server -->
+        <domain includeSubdomains="true">102.208.98.85</domain>
+        <!-- ✅ REMOVED: ngrok is no longer needed -->
+        <!-- <domain includeSubdomains="true">radial-settle-docile.ngrok-free.dev</domain> -->
     </domain-config>
     <debug-overrides>
         <trust-anchors>

@@ -8,7 +8,9 @@ import 'package:payroll_soft_token_app/core/services/storage_service.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
-  String _baseUrl = 'https://radial-settle-docile.ngrok-free.dev/api';
+
+  // ✅ CHANGED: Default to production server
+  String _baseUrl = 'http://102.208.98.85:7201/api';
 
   factory ApiService() {
     return _instance;
@@ -29,7 +31,7 @@ class ApiService {
     final token = session?['token'] ?? '';
     return {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
+      'ngrok-skip-browser-warning': 'true', // Keep for compatibility
       if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
@@ -241,7 +243,6 @@ class ApiService {
         final data = jsonDecode(response.body);
         return {'success': true, 'data': data};
       } else {
-        // Even if the status is not 200, we try to parse the body
         try {
           final data = jsonDecode(response.body);
           return {
